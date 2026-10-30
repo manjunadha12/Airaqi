@@ -13,7 +13,12 @@ const connectDB = async () => {
     return conn;
   } catch (error) {
     console.error(`Error: ${error.message}`);
-    process.exit(1);
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('⚠️ Server will remain running while database connection retries.');
+      setTimeout(connectDB, 8000);
+    } else {
+      process.exit(1);
+    }
   }
 };
 
