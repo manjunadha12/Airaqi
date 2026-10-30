@@ -185,6 +185,43 @@ const createUserLocationIcon = () => {
   });
 };
 
+// High-performance public tile providers (No API key, No 403 blocks, No watermarks)
+const createMapLayer = (style) => {
+  if (style === 'street') {
+    return L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+      {
+        attribution: '&copy; Esri &bull; AirSense Worldwide AQI',
+        maxZoom: 18,
+      }
+    );
+  }
+  if (style === 'satellite') {
+    return L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      {
+        attribution: '&copy; Esri World Imagery &bull; AirSense',
+        maxZoom: 18,
+      }
+    );
+  }
+  // Default: Esri Dark Gray Base + Reference Labels Overlay
+  const base = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    {
+      attribution: '&copy; Esri &bull; AirSense Worldwide AQI',
+      maxZoom: 16,
+    }
+  );
+  const labels = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+    {
+      maxZoom: 16,
+    }
+  );
+  return L.layerGroup([base, labels]);
+};
+
 export default function InteractiveAQIMap({
   centerLocation,
   currentAQI,
@@ -418,12 +455,9 @@ export default function InteractiveAQIMap({
       maxZoom: 18,
     });
 
-    const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a> &bull; AirSense',
-      subdomains: 'abcd',
-      maxZoom: 19,
-    }).addTo(map);
-    tileLayerRef.current = darkLayer;
+    const initialLayer = createMapLayer('dark');
+    initialLayer.addTo(map);
+    tileLayerRef.current = initialLayer;
 
     // Marker Cluster Group with disableClusteringAtZoom: 10
     // so individual green/yellow/red station badges appear directly at city zoom!
@@ -521,30 +555,18 @@ export default function InteractiveAQIMap({
     }
   }, [currentAQI?.stations, renderStationMarkers]);
 
-  // Change Map Style (Carto Dark Matter vs Carto Voyager)
+  // Change Map Style (Cycle: Dark Gray Canvas -> Street -> Satellite)
   const toggleMapStyle = () => {
     if (!mapInstanceRef.current || !tileLayerRef.current) return;
-    const newStyle = mapStyle === 'dark' ? 'voyager' : 'dark';
+    const styles = ['dark', 'street', 'satellite'];
+    const nextIndex = (styles.indexOf(mapStyle) + 1) % styles.length;
+    const nextStyle = styles[nextIndex];
+
     mapInstanceRef.current.removeLayer(tileLayerRef.current);
-
-    let newLayer;
-    if (newStyle === 'dark') {
-      newLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO &bull; AirSense',
-        subdomains: 'abcd',
-        maxZoom: 19,
-      });
-    } else {
-      newLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO &bull; AirSense',
-        subdomains: 'abcd',
-        maxZoom: 19,
-      });
-    }
-
+    const newLayer = createMapLayer(nextStyle);
     newLayer.addTo(mapInstanceRef.current);
     tileLayerRef.current = newLayer;
-    setMapStyle(newStyle);
+    setMapStyle(nextStyle);
   };
 
   // Fly to location when centerLocation changes
@@ -760,7 +782,7 @@ export default function InteractiveAQIMap({
           {/* Map Layer Style Switcher */}
           <button
             onClick={toggleMapStyle}
-            title={mapStyle === 'dark' ? 'Switch to Street Map (Carto Voyager)' : 'Switch to Dark Mode Map (Carto Dark)'}
+            title={`Switch Map Layer (Current: ${mapStyle.toUpperCase()}) - Dark / Street / Satellite`}
             className="p-2.5 bg-slate-900/85 hover:bg-slate-900 text-white rounded-2xl border border-white/20 shadow-xl backdrop-blur-xl transition hover:scale-105"
           >
             <FiLayers className="w-4 h-4 text-cyan-400" />
