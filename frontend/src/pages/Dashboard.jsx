@@ -431,7 +431,7 @@ export default function Dashboard() {
                   </span>
                 </div>
 
-                <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight break-words">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight break-words">
                   {locationTitle}
                 </h1>
 
@@ -445,29 +445,29 @@ export default function Dashboard() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
+              <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto shrink-0">
                 <button
                   onClick={() => requestCurrentLocation(false)}
                   disabled={isDetectingLocation}
-                  className="flex-1 sm:flex-initial px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-cyan-500/25 border border-white/20 transition hover:scale-105 active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="flex-1 sm:flex-initial px-4 sm:px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-cyan-500/25 border border-white/20 transition hover:scale-105 active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   <FiNavigation className={`w-4 h-4 ${isDetectingLocation ? 'animate-spin' : ''}`} />
-                  <span>{isDetectingLocation ? 'Locating...' : 'Use My Current Location'}</span>
+                  <span>{isDetectingLocation ? 'Locating...' : 'Use My Location'}</span>
                 </button>
 
                 <button
                   onClick={() => fetchDashboardDataForLocation(activeLocation)}
                   disabled={loading}
-                  className="flex-1 sm:flex-initial px-4 py-2.5 bg-slate-900/80 hover:bg-slate-800 text-slate-200 hover:text-white rounded-2xl font-bold text-xs uppercase tracking-wider border border-white/15 backdrop-blur-xl transition hover:scale-105 active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="px-3.5 sm:px-4 py-2.5 bg-slate-900/80 hover:bg-slate-800 text-slate-200 hover:text-white rounded-2xl font-bold text-xs uppercase tracking-wider border border-white/15 backdrop-blur-xl transition hover:scale-105 active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   <FiRefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                  <span>Refresh</span>
+                  <span className="hidden sm:inline">Refresh</span>
                 </button>
               </div>
             </div>
 
             {/* BOTTOM ROW: Key Telemetry Metrics Grid (Always Visible & Prominent) */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 pt-4 border-t border-white/10 relative z-10">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3.5 pt-4 border-t border-white/10 relative z-10">
               {/* Metric 1: Live AQI */}
               <div
                 className="p-3.5 rounded-2xl border transition-all duration-300 hover:scale-[1.02] flex flex-col justify-between"
@@ -585,25 +585,25 @@ export default function Dashboard() {
         </div>
 
         {/* LOWER DASHBOARD CONTENT: Fluid, Bespoke, Unboxed Layout */}
-        <div className="px-4 sm:px-6 md:px-10 lg:px-14 mt-10 space-y-10 relative z-10">
+        <div className="px-3 sm:px-6 md:px-10 lg:px-14 mt-6 sm:mt-10 space-y-6 sm:space-y-10 relative z-10">
           {/* SECTION 1: Actionable Atmospheric Health & Activity Protocol */}
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
               <div>
-                <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-                  <FiShield className="w-5 h-5 text-cyan-400" />
-                  Atmospheric Protocol & Guidance for {locationTitle}
+                <h2 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
+                  <FiShield className="w-5 h-5 text-cyan-400 shrink-0" />
+                  <span>Atmospheric Protocol & Guidance for {locationTitle}</span>
                 </h2>
                 <p className="text-xs font-semibold text-slate-400">
                   {aqiTheme.healthAdvice}
                 </p>
               </div>
-              <span className="text-[11px] font-mono font-bold text-cyan-300 bg-cyan-950/70 border border-cyan-500/30 px-3 py-1 rounded-full">
+              <span className="text-[10px] sm:text-[11px] font-mono font-bold text-cyan-300 bg-cyan-950/70 border border-cyan-500/30 px-3 py-1 rounded-full">
                 {aqiTheme.timeActivityTip}
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
               <div className="p-5 rounded-3xl bg-slate-900/50 border border-white/10 backdrop-blur-2xl hover:border-cyan-400/30 transition hover:scale-[1.01]">
                 <div className="flex items-center gap-3 mb-2">
                   <span className="p-2.5 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
@@ -671,30 +671,33 @@ export default function Dashboard() {
               </div>
 
               {/* Chart Mode Selector Pills */}
-              <div className="flex items-center bg-slate-950 p-1 rounded-2xl border border-white/10 backdrop-blur-xl text-xs font-bold">
+              <div className="flex items-center bg-slate-950 p-1 rounded-2xl border border-white/10 backdrop-blur-xl text-[11px] sm:text-xs font-bold overflow-x-auto max-w-full">
                 <button
                   onClick={() => setActiveChartTab('forecast')}
-                  className={`px-4 py-2 rounded-xl transition ${
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl transition whitespace-nowrap ${
                     activeChartTab === 'forecast' ? 'bg-cyan-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  24h Predictive Cycle
+                  <span className="hidden sm:inline">24h Predictive Cycle</span>
+                  <span className="inline sm:hidden">24h Forecast</span>
                 </button>
                 <button
                   onClick={() => setActiveChartTab('history')}
-                  className={`px-4 py-2 rounded-xl transition ${
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl transition whitespace-nowrap ${
                     activeChartTab === 'history' ? 'bg-cyan-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  24h Sensor History
+                  <span className="hidden sm:inline">24h Sensor History</span>
+                  <span className="inline sm:hidden">24h History</span>
                 </button>
                 <button
                   onClick={() => setActiveChartTab('pollutants')}
-                  className={`px-4 py-2 rounded-xl transition ${
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl transition whitespace-nowrap ${
                     activeChartTab === 'pollutants' ? 'bg-cyan-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  Pollutants Spectrum
+                  <span className="hidden sm:inline">Pollutants Spectrum</span>
+                  <span className="inline sm:hidden">Pollutants</span>
                 </button>
               </div>
             </div>

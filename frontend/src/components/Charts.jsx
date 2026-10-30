@@ -3,16 +3,16 @@ import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Cartesia
 
 export function AQILineChart({ data, title }) {
   return (
-    <div className="backdrop-blur-3xl bg-slate-900/60 rounded-3xl p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] border border-white/15 transition-all duration-500">
-      <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-        <h3 className="text-xl font-black text-white tracking-tight">{title}</h3>
+    <div className="backdrop-blur-3xl bg-slate-900/60 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] border border-white/15 transition-all duration-500">
+      <div className="flex justify-between items-center mb-3 sm:mb-4 flex-wrap gap-2">
+        <h3 className="text-base sm:text-xl font-black text-white tracking-tight">{title}</h3>
         <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-500/30 text-[10px] font-mono font-bold">
           <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
           Wave Motion
         </span>
       </div>
-      <div className="h-[300px] w-full">
-        <ResponsiveContainer width="100%" height={300}>
+      <div className="h-[240px] sm:h-[300px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
             <defs>
               <linearGradient id="dashboardWaveGrad" x1="0" y1="0" x2="0" y2="1">
@@ -48,9 +48,10 @@ export function AQILineChart({ data, title }) {
 
 export function AQIPollutantsChart({ data, title }) {
   return (
-    <div className="backdrop-blur-3xl bg-slate-900/35 dark:bg-slate-900/35 rounded-3xl p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] border border-white/15 dark:border-white/10 transition-all duration-500">
-      <h3 className="text-xl font-black mb-4 text-white tracking-tight">{title}</h3>
-      <ResponsiveContainer width="100%" height={300}>
+    <div className="backdrop-blur-3xl bg-slate-900/35 dark:bg-slate-900/35 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] border border-white/15 dark:border-white/10 transition-all duration-500">
+      <h3 className="text-base sm:text-xl font-black mb-3 sm:mb-4 text-white tracking-tight">{title}</h3>
+      <div className="h-[240px] sm:h-[300px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#94a3b8" strokeOpacity={0.15} />
           <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} />
@@ -65,15 +66,17 @@ export function AQIPollutantsChart({ data, title }) {
           <Bar dataKey="co" fill="#06b6d4" radius={[6, 6, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }
 
 export function AQITrendChart({ data, title }) {
   return (
-    <div className="backdrop-blur-3xl bg-slate-900/35 dark:bg-slate-900/35 rounded-3xl p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] border border-white/15 dark:border-white/10 transition-all duration-500">
-      <h3 className="text-xl font-black mb-4 text-white tracking-tight">{title}</h3>
-      <ResponsiveContainer width="100%" height={300}>
+    <div className="backdrop-blur-3xl bg-slate-900/35 dark:bg-slate-900/35 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] border border-white/15 dark:border-white/10 transition-all duration-500">
+      <h3 className="text-base sm:text-xl font-black mb-3 sm:mb-4 text-white tracking-tight">{title}</h3>
+      <div className="h-[240px] sm:h-[300px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#94a3b8" strokeOpacity={0.15} />
           <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} tickLine={false} />
@@ -90,33 +93,36 @@ export function AQITrendChart({ data, title }) {
           />
         </AreaChart>
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }
 
 export function AQIComparisonChart({ data, title }) {
   return (
-    <div className="backdrop-blur-3xl bg-slate-900/35 dark:bg-slate-900/35 rounded-3xl p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] border border-white/15 dark:border-white/10 transition-all duration-500">
-      <h3 className="text-xl font-black mb-4 text-white tracking-tight">{title}</h3>
-      <ResponsiveContainer width="100%" height={350}>
-        <BarChart data={data} layout="vertical" margin={{ left: 40, right: 30 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#94a3b8" strokeOpacity={0.15} />
-          <XAxis type="number" domain={[0, 'dataMax + 50']} stroke="#94a3b8" fontSize={12} />
-          <YAxis type="category" dataKey="city" width={80} stroke="#94a3b8" fontSize={12} />
-          <Tooltip
-             contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(24px)', color: '#fff', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '16px' }}
-             itemStyle={{ color: '#fff' }}
-          />
-          <Bar dataKey="aqi" radius={[0, 8, 8, 0]}>
-            {data.map((entry, index) => (
-              <Bar
-                key={`cell-${index}`}
-                fill={entry.aqi > 200 ? '#ef4444' : (entry.aqi > 100 ? '#f97316' : '#10b981')}
-              />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+    <div className="backdrop-blur-3xl bg-slate-900/35 dark:bg-slate-900/35 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] border border-white/15 dark:border-white/10 transition-all duration-500">
+      <h3 className="text-base sm:text-xl font-black mb-3 sm:mb-4 text-white tracking-tight">{title}</h3>
+      <div className="h-[280px] sm:h-[350px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} layout="vertical" margin={{ left: 20, right: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#94a3b8" strokeOpacity={0.15} />
+            <XAxis type="number" domain={[0, 'dataMax + 50']} stroke="#94a3b8" fontSize={11} />
+            <YAxis type="category" dataKey="city" width={70} stroke="#94a3b8" fontSize={11} />
+            <Tooltip
+               contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(24px)', color: '#fff', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '16px' }}
+               itemStyle={{ color: '#fff' }}
+            />
+            <Bar dataKey="aqi" radius={[0, 8, 8, 0]}>
+              {data.map((entry, index) => (
+                <Bar
+                  key={`cell-${index}`}
+                  fill={entry.aqi > 200 ? '#ef4444' : (entry.aqi > 100 ? '#f97316' : '#10b981')}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }

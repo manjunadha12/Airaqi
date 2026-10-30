@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FiX } from 'react-icons/fi';
+import { useLocation, Link } from 'react-router-dom';
+import { FiX, FiHome, FiBarChart2, FiTrendingUp, FiBell, FiMenu } from 'react-icons/fi';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import AirParticlesBackground from './AirParticlesBackground';
@@ -14,6 +15,7 @@ export default function Layout({ children, fullBleed = false }) {
   });
   const [isHovered, setIsHovered] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
 
   const { user } = useAuthStore();
   const { selectedCity } = useAQIStore();
@@ -150,9 +152,71 @@ export default function Layout({ children, fullBleed = false }) {
         />
 
         {/* Page Content */}
-        <main className={`flex-1 overflow-y-auto ${fullBleed ? 'p-0' : 'p-4 md:p-8 space-y-6'}`}>
+        <main className={`flex-1 overflow-y-auto pb-20 md:pb-0 ${fullBleed ? 'p-0' : 'p-3 sm:p-5 md:p-8 space-y-4 sm:space-y-6'}`}>
           {children}
         </main>
+
+        {/* Mobile Bottom Navigation Bar (Native Mobile Web App Navigation) */}
+        <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-[#06141B]/95 backdrop-blur-2xl border-t border-white/10 px-2 py-1.5 shadow-[0_-10px_35px_rgba(0,0,0,0.8)] flex items-center justify-around">
+          <Link
+            to="/dashboard"
+            className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all duration-200 ${
+              location.pathname === '/dashboard'
+                ? 'text-cyan-400 bg-cyan-500/15 font-bold shadow-inner'
+                : 'text-slate-400 hover:text-slate-200 font-medium'
+            }`}
+          >
+            <FiHome className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] tracking-tight">Overview</span>
+          </Link>
+
+          <Link
+            to="/analytics"
+            className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all duration-200 ${
+              location.pathname === '/analytics'
+                ? 'text-cyan-400 bg-cyan-500/15 font-bold shadow-inner'
+                : 'text-slate-400 hover:text-slate-200 font-medium'
+            }`}
+          >
+            <FiBarChart2 className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] tracking-tight">Analytics</span>
+          </Link>
+
+          <Link
+            to="/predictions"
+            className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all duration-200 ${
+              location.pathname === '/predictions'
+                ? 'text-cyan-400 bg-cyan-500/15 font-bold shadow-inner'
+                : 'text-slate-400 hover:text-slate-200 font-medium'
+            }`}
+          >
+            <FiTrendingUp className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] tracking-tight">Predict</span>
+          </Link>
+
+          <Link
+            to="/alerts"
+            className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all duration-200 ${
+              location.pathname === '/alerts'
+                ? 'text-cyan-400 bg-cyan-500/15 font-bold shadow-inner'
+                : 'text-slate-400 hover:text-slate-200 font-medium'
+            }`}
+          >
+            <div className="relative">
+              <FiBell className="w-5 h-5 mb-0.5" />
+              <span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-slate-950 animate-pulse" />
+            </div>
+            <span className="text-[10px] tracking-tight">Alerts</span>
+          </Link>
+
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="flex flex-col items-center justify-center py-1 px-3 rounded-2xl text-slate-400 hover:text-slate-200 transition-all duration-200 font-medium cursor-pointer"
+          >
+            <FiMenu className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] tracking-tight">More</span>
+          </button>
+        </nav>
       </div>
     </div>
   );

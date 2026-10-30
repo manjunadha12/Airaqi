@@ -246,7 +246,7 @@ export default function InteractiveAQIMap({
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
-  const [showLegend, setShowLegend] = useState(true);
+  const [showLegend, setShowLegend] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768);
   const searchTimeoutRef = useRef(null);
   const moveEndTimeoutRef = useRef(null);
 
@@ -712,16 +712,16 @@ export default function InteractiveAQIMap({
       isFullscreen
         ? 'fixed inset-4 z-50 h-[calc(100vh-2rem)] rounded-3xl border border-white/20 shadow-2xl'
         : heroMode
-          ? 'h-[560px] md:h-[620px] lg:h-[660px] rounded-none border-b border-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.8)]'
-          : 'h-[500px] rounded-3xl shadow-2xl border border-white/20'
+          ? 'h-[440px] sm:h-[540px] md:h-[620px] lg:h-[660px] rounded-none border-b border-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.8)]'
+          : 'h-[360px] sm:h-[500px] rounded-3xl shadow-2xl border border-white/20'
     }`}>
       {/* Subtle Atmospheric Gradient Blend Into Dashboard */}
       {heroMode && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#06141B]/90 via-[#06141B]/40 to-transparent z-[20]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#06141B]/90 via-[#06141B]/40 to-transparent z-[20]" />
       )}
 
       {/* Top Overlay: Search Bar & Action Controls */}
-      <div className={`absolute ${heroMode ? "top-20" : "top-4"} left-4 right-4 z-[1000] flex flex-wrap items-center justify-between gap-3 pointer-events-none transition-all`}>
+      <div className={`absolute ${heroMode ? "top-16 sm:top-20" : "top-3 sm:top-4"} left-3 right-3 sm:left-4 sm:right-4 z-[1000] flex flex-wrap items-center justify-between gap-2 sm:gap-3 pointer-events-none transition-all`}>
         {/* Left: Location Search Bar */}
         <div className="relative pointer-events-auto flex-1 max-w-md">
           <div className="relative flex items-center bg-slate-900/90 hover:bg-slate-900 backdrop-blur-2xl rounded-2xl border border-white/20 shadow-2xl transition">
@@ -767,16 +767,17 @@ export default function InteractiveAQIMap({
         </div>
 
         {/* Right: Quick Action Controls */}
-        <div className="flex items-center gap-2 pointer-events-auto">
+        <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto shrink-0">
           {/* Prominent "Use My Current Location" button */}
           <button
             onClick={onUseCurrentLocation}
             disabled={isDetectingLocation}
             title="Detect GPS Location"
-            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-xl shadow-cyan-500/25 border border-white/30 backdrop-blur-xl transition hover:scale-105 active:scale-95 disabled:opacity-60"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-wider shadow-xl shadow-cyan-500/25 border border-white/30 backdrop-blur-xl transition hover:scale-105 active:scale-95 disabled:opacity-60"
           >
-            <FiNavigation className={`w-4 h-4 ${isDetectingLocation ? 'animate-spin' : ''}`} />
-            <span>{isDetectingLocation ? 'Locating...' : 'Use My Current Location'}</span>
+            <FiNavigation className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isDetectingLocation ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{isDetectingLocation ? 'Locating...' : 'Use My Current Location'}</span>
+            <span className="inline sm:hidden">{isDetectingLocation ? '...' : 'My Location'}</span>
           </button>
 
           {/* Map Layer Style Switcher */}
@@ -843,13 +844,14 @@ export default function InteractiveAQIMap({
       </div>
 
       {/* Bottom Left: Live Stations Count Badge */}
-      <div className={`absolute left-4 z-[500] pointer-events-none transition-all duration-300 ${
+      <div className={`absolute left-3 sm:left-4 z-[500] pointer-events-none transition-all duration-300 ${
         heroMode ? 'bottom-20 md:bottom-24' : 'bottom-6'
       }`}>
-        <div className="pointer-events-auto flex items-center gap-2 bg-slate-900/90 backdrop-blur-2xl px-4 py-2 rounded-2xl border border-white/20 shadow-xl text-xs font-mono font-bold text-white">
-          <span className={`w-2.5 h-2.5 rounded-full ${isLoadingStations ? 'bg-amber-400 animate-ping' : 'bg-green-400'}`}></span>
-          <span>{visibleStationCount} Monitoring Stations in Visible Area</span>
-          {isLoadingStations && <FiRefreshCw className="w-3.5 h-3.5 animate-spin text-amber-400 ml-1" />}
+        <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2 bg-slate-900/90 backdrop-blur-2xl px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl border border-white/20 shadow-xl text-[11px] sm:text-xs font-mono font-bold text-white">
+          <span className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full ${isLoadingStations ? 'bg-amber-400 animate-ping' : 'bg-green-400'}`}></span>
+          <span className="hidden sm:inline">{visibleStationCount} Monitoring Stations in Visible Area</span>
+          <span className="inline sm:hidden">{visibleStationCount} Stations</span>
+          {isLoadingStations && <FiRefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5 animate-spin text-amber-400 ml-1" />}
         </div>
       </div>
 
