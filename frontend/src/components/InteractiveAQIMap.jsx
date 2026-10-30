@@ -201,7 +201,7 @@ export default function InteractiveAQIMap({
   const userMarkerRef = useRef(null);
   const tileLayerRef = useRef(null);
 
-  const [mapStyle, setMapStyle] = useState('osm');
+  const [mapStyle, setMapStyle] = useState('dark');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoadingStations, setIsLoadingStations] = useState(false);
   const [visibleStationCount, setVisibleStationCount] = useState(0);
@@ -418,11 +418,12 @@ export default function InteractiveAQIMap({
       maxZoom: 18,
     });
 
-    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &bull; AirSense Worldwide AQI',
+    const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a> &bull; AirSense',
+      subdomains: 'abcd',
       maxZoom: 19,
     }).addTo(map);
-    tileLayerRef.current = osmLayer;
+    tileLayerRef.current = darkLayer;
 
     // Marker Cluster Group with disableClusteringAtZoom: 10
     // so individual green/yellow/red station badges appear directly at city zoom!
@@ -520,22 +521,24 @@ export default function InteractiveAQIMap({
     }
   }, [currentAQI?.stations, renderStationMarkers]);
 
-  // Change Map Style (OpenStreetMap standard vs Carto Dark Matter)
+  // Change Map Style (Carto Dark Matter vs Carto Voyager)
   const toggleMapStyle = () => {
     if (!mapInstanceRef.current || !tileLayerRef.current) return;
-    const newStyle = mapStyle === 'osm' ? 'dark' : 'osm';
+    const newStyle = mapStyle === 'dark' ? 'voyager' : 'dark';
     mapInstanceRef.current.removeLayer(tileLayerRef.current);
 
     let newLayer;
     if (newStyle === 'dark') {
       newLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; CartoDB &bull; &copy; OpenStreetMap contributors &bull; AirSense',
-        maxZoom: 19
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO &bull; AirSense',
+        subdomains: 'abcd',
+        maxZoom: 19,
       });
     } else {
-      newLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors &bull; AirSense Worldwide AQI',
-        maxZoom: 19
+      newLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO &bull; AirSense',
+        subdomains: 'abcd',
+        maxZoom: 19,
       });
     }
 
@@ -757,7 +760,7 @@ export default function InteractiveAQIMap({
           {/* Map Layer Style Switcher */}
           <button
             onClick={toggleMapStyle}
-            title={mapStyle === 'osm' ? 'Switch to Dark Mode Map' : 'Switch to Standard OpenStreetMap'}
+            title={mapStyle === 'dark' ? 'Switch to Street Map (Carto Voyager)' : 'Switch to Dark Mode Map (Carto Dark)'}
             className="p-2.5 bg-slate-900/85 hover:bg-slate-900 text-white rounded-2xl border border-white/20 shadow-xl backdrop-blur-xl transition hover:scale-105"
           >
             <FiLayers className="w-4 h-4 text-cyan-400" />
