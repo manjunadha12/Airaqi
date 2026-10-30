@@ -27,19 +27,38 @@ const getTransporter = () => {
     return null;
   }
 
+  const isGmail =
+    (config.host && config.host.includes('gmail')) ||
+    (config.user && config.user.endsWith('@gmail.com'));
+
   if (!cachedTransporter) {
-    cachedTransporter = nodemailer.createTransport({
-      host: config.host,
-      port: config.port,
-      secure: config.secure,
-      auth: {
-        user: config.user,
-        pass: config.pass,
-      },
-      connectionTimeout: 10000,
-      greetingTimeout: 5000,
-      socketTimeout: 15000,
-    });
+    if (isGmail) {
+      cachedTransporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: config.user,
+          pass: config.pass,
+        },
+        pool: true,
+        maxConnections: 3,
+        connectionTimeout: 15000,
+        greetingTimeout: 10000,
+        socketTimeout: 20000,
+      });
+    } else {
+      cachedTransporter = nodemailer.createTransport({
+        host: config.host,
+        port: config.port,
+        secure: config.secure,
+        auth: {
+          user: config.user,
+          pass: config.pass,
+        },
+        connectionTimeout: 15000,
+        greetingTimeout: 10000,
+        socketTimeout: 20000,
+      });
+    }
   }
 
   return cachedTransporter;
@@ -92,6 +111,7 @@ const sendEmail = async ({ to, subject, html, text }) => {
     return { delivered: true, messageId: info.messageId };
   } catch (error) {
     console.error(`❌ Failed to send email to ${to}:`, error.message);
+    cachedTransporter = null;
     if (process.env.NODE_ENV === 'production') {
       throw new Error(`Email delivery failed: ${error.message}`);
     }
