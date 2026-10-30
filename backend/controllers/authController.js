@@ -92,7 +92,8 @@ exports.register = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Account created successfully! Please verify your email to continue.',
+      requiresVerification: true,
+      message: 'Account created successfully! Please verify your email with the 6-digit code.',
       email: cleanEmail,
       userId: user._id,
     });
@@ -509,11 +510,28 @@ exports.verifyEmail = async (req, res) => {
     user.emailVerificationTokenExpiry = undefined;
     user.otpToken = undefined;
     user.otpTokenExpiry = undefined;
+    user.lastLogin = new Date();
+    user.lastLoginIP = req.ip || req.connection?.remoteAddress;
     await user.save();
+
+    // Auto-login upon verification
+    const accessToken = generateAccessToken(user._id, user.role);
+    const refreshToken = generateRefreshToken(user._id);
 
     res.status(200).json({
       success: true,
-      message: 'Email verified successfully! You can now sign in.',
+      message: 'Email verified successfully! Welcome to AirSense Cloud.',
+      accessToken,
+      refreshToken,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        isEmailVerified: true,
+      },
     });
   } catch (error) {
     res.status(500).json({

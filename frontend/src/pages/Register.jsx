@@ -22,6 +22,8 @@ import {
   Radio,
   FileText,
   Info,
+  KeyRound,
+  RotateCcw,
 } from 'lucide-react';
 
 export default function Register() {
@@ -50,6 +52,22 @@ export default function Register() {
   const [termsModal, setTermsModal] = useState(false);
   const [googleSetupModal, setGoogleSetupModal] = useState(false);
   const googleBtnRef = useRef(null);
+
+  const [step, setStep] = useState('register'); // 'register' | 'otp'
+  const [otp, setOtp] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+
+  // Handle resend countdown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || typeof window === 'undefined') return;
@@ -191,18 +209,9 @@ export default function Register() {
       const res = await apiService.register(payload);
 
       if (res.data?.success) {
-        if (res.data.requiresVerification) {
-          navigate(
-            `/verify-email?email=${encodeURIComponent(formData.email.trim())}&registered=true`
-          );
-        } else if (res.data.accessToken) {
-          login(res.data.user, res.data.accessToken, res.data.refreshToken);
-          navigate('/dashboard', { replace: true });
-        } else {
-          navigate('/login', {
-            state: { message: 'Registration successful! Please sign in.' },
-          });
-        }
+        setRegisteredEmail(formData.email.trim());
+        setStep('otp');
+        setResendCooldown(60);
       }
     } catch (err) {
       const errData = err.response?.data;
@@ -215,6 +224,61 @@ export default function Register() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOtpSubmit = async (e) => {
+    e.preventDefault();
+    if (!otp.trim() || otp.trim().length < 6) {
+      setError('Please enter the complete 6-digit verification code.');
+      return;
+    }
+
+    setOtpLoading(true);
+    setError(null);
+
+    try {
+      const response = await apiService.verifyEmail({
+        otp: otp.trim(),
+        email: registeredEmail.toLowerCase().trim(),
+      });
+
+      if (response.data?.success) {
+        if (response.data.accessToken && response.data.user) {
+          login(response.data.user, response.data.accessToken, response.data.refreshToken);
+          navigate('/dashboard', { replace: true });
+        } else {
+          navigate('/login', {
+            state: { message: 'Email verified successfully! Please sign in.' },
+          });
+        }
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          'Invalid or expired verification code. Please request a new one.'
+      );
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || resending) return;
+    setResending(true);
+    setError(null);
+
+    try {
+      const response = await apiService.resendVerification(registeredEmail);
+      if (response.data?.success) {
+        setResendCooldown(60);
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.message || 'Failed to resend code. Please try again shortly.'
+      );
+    } finally {
+      setResending(false);
     }
   };
 
@@ -354,8 +418,82 @@ export default function Register() {
               </div>
             )}
 
-            {/* Google Sign-Up Container */}
-            <div className="w-full flex flex-col items-center mb-5">
+            {step === 'otp' ? (
+              <form onSubmit={handleOtpSubmit} className="space-y-4 animate-fadeIn">
+                <div className="text-center py-2">
+                  <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-tr from-cyan-500/20 to-teal-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 shadow-lg shadow-cyan-500/10">
+                    <KeyRound className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white tracking-tight">Verify Your Email</h3>
+                  <p className="text-slate-400 text-xs mt-1.5 max-w-sm mx-auto leading-relaxed">
+                    We've sent a 6-digit verification code to{' '}
+                    <span className="text-cyan-400 font-bold">{registeredEmail}</span>. Enter it below to activate your account.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider text-center">
+                    6-Digit Security Code
+                  </label>
+                  <div className="relative max-w-xs mx-auto">
+                    <input
+                      type="text"
+                      maxLength={6}
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                      className="w-full py-3 px-4 text-center tracking-[0.5em] text-2xl font-black bg-[#06141B]/90 border border-cyan-400/40 rounded-2xl text-cyan-300 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400 transition"
+                      placeholder="••••••"
+                      autoFocus
+                      required
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={otpLoading || otp.length < 6}
+                  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-[#06141B] font-black text-sm tracking-wide transition-all shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 cursor-pointer mt-2"
+                >
+                  {otpLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-[#06141B] border-t-transparent rounded-full animate-spin" />
+                      <span>Verifying Code...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Verify & Activate Account</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+
+                <div className="flex items-center justify-between pt-3 border-t border-white/10 text-xs">
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    disabled={resendCooldown > 0 || resending}
+                    className="text-cyan-400 hover:text-cyan-300 font-medium transition disabled:text-slate-500 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <RotateCcw className={`w-3.5 h-3.5 ${resending ? 'animate-spin' : ''}`} />
+                    <span>{resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep('register');
+                      setError(null);
+                    }}
+                    className="text-slate-400 hover:text-white font-medium transition cursor-pointer"
+                  >
+                    Edit details
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <>
+                {/* Google Sign-Up Container */}
+                <div className="w-full flex flex-col items-center mb-5">
               <div
                 ref={googleBtnRef}
                 id="googleSignUpButton"
@@ -606,6 +744,8 @@ export default function Register() {
                 )}
               </button>
             </form>
+          </>
+        )}
 
             {/* Footer Navigation */}
             <div className="mt-5 pt-4 border-t border-white/10 text-center">
