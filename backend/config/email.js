@@ -5,8 +5,8 @@ const getSMTPConfig = () => {
   const port = parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587', 10);
   const secure = process.env.SMTP_SECURE === 'true' || port === 465;
   const user = process.env.SMTP_USER || process.env.EMAIL_USER || '';
-  const pass = process.env.SMTP_PASS || process.env.EMAIL_PASSWORD || '';
-  const from = process.env.SMTP_FROM || process.env.EMAIL_FROM || '"AQI Index AirSense" <noreply@airsense-cloud.com>';
+  const pass = (process.env.SMTP_PASS || process.env.EMAIL_PASSWORD || '').replace(/\s+/g, '');
+  const from = process.env.SMTP_FROM || process.env.EMAIL_FROM || `"AQI Index AirSense" <${user || 'airindexaqi@gmail.com'}>`;
 
   const isConfigured =
     user &&

@@ -85,6 +85,7 @@ exports.register = async (req, res) => {
         `${user.firstName} ${user.lastName}`,
         otp
       );
+      console.log(`✓ Verification email & OTP [${otp}] successfully dispatched to ${cleanEmail}`);
     } catch (emailError) {
       console.warn('Notice: Verification email dispatch encountered an issue:', emailError.message);
     }
@@ -624,6 +625,7 @@ exports.forgotPassword = async (req, res) => {
         `${user.firstName} ${user.lastName}`,
         otp
       );
+      console.log(`✓ Verification email & OTP [${otp}] successfully dispatched to ${cleanEmail}`);
     } catch (emailError) {
       console.warn('Notice: Password reset email dispatch issue:', emailError.message);
     }
@@ -766,6 +768,7 @@ exports.sendOTP = async (req, res) => {
 
     try {
       await sendOTPEmail(user.email, otp, `${user.firstName} ${user.lastName}`);
+      console.log(`✓ OTP [${otp}] dispatched to ${user.email}`);
     } catch (e) {
       console.warn('OTP email dispatch issue:', e.message);
     }
