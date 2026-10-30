@@ -1,0 +1,355 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .mockup-glass {
+    @apply relative backdrop-blur-3xl bg-[#11212D]/80 border border-white/20 shadow-[0_16px_48px_0_rgba(0,0,0,0.6)] rounded-3xl transition-all duration-500 hover:border-white/30 hover:shadow-[0_20px_60px_0_rgba(6,182,212,0.3)];
+  }
+  .glass-box {
+    @apply backdrop-blur-3xl bg-[#11212D]/80 border border-white/15 shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] rounded-3xl transition-all duration-500 hover:border-cyan-400/50 hover:shadow-[0_12px_40px_0_rgba(6,182,212,0.25)];
+  }
+  .glass-card {
+    @apply backdrop-blur-3xl bg-[#11212D]/80 border border-white/15 shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] rounded-3xl transition-all duration-500 hover:border-cyan-400/50;
+  }
+  .glass-card-sm {
+    @apply backdrop-blur-2xl bg-[#11212D]/80 border border-white/15 shadow-xl rounded-2xl transition-all duration-300;
+  }
+  .glass-pill {
+    @apply backdrop-blur-xl bg-[#11212D]/70 border border-white/15 rounded-2xl;
+  }
+  .glass-input {
+    @apply backdrop-blur-xl bg-[#06141B]/80 border border-white/15 rounded-2xl outline-none focus:ring-2 focus:ring-cyan-500/50 text-white placeholder-gray-400 transition-all;
+  }
+  .glass-button {
+    @apply backdrop-blur-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-2xl transition-all duration-300 shadow-lg shadow-cyan-500/25 hover:scale-[1.02] active:scale-95;
+  }
+}
+
+* {
+  @apply transition-colors duration-200;
+}
+
+body {
+  background-color: #06141B;
+  color: #f1f5f9;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Glass Scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-white/20 dark:bg-white/10 rounded-full hover:bg-white/30 dark:hover:bg-white/20 backdrop-blur-md;
+}
+
+
+/* Leaflet Custom Popup & Marker Styles */
+.leaflet-popup-content-wrapper {
+  background: rgba(17, 33, 45, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 1.25rem !important;
+  color: #f8fafc !important;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.8) !important;
+  padding: 4px !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(17, 33, 45, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.leaflet-container {
+  font-family: inherit !important;
+}
+
+.custom-station-popup .leaflet-popup-content {
+  margin: 10px 12px !important;
+  line-height: 1.4 !important;
+}
+
+.custom-station-popup h4 {
+  color: #ffffff !important;
+}
+
+.station-popup-card span,
+.station-popup-card strong {
+  font-family: inherit;
+}
+
+
+/* Prevent Leaflet DivIcon default square white box */
+.leaflet-div-icon,
+.custom-station-aqi-icon,
+.custom-user-location-icon,
+.custom-aqi-cluster-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.custom-station-aqi-icon div {
+  user-select: none;
+}
+
+/* Animations & Ultra-Interactive Styles */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); }
+  50% { box-shadow: 0 0 30px rgba(6, 182, 212, 0.8); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scaleUp {
+  animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pulseGlow {
+  animation: pulseGlow 2.5s infinite;
+}
+
+/* Glass backdrop utilities */
+.backdrop-glass-modal {
+  background: rgba(17, 33, 45, 0.9);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+}
+
+/* Perfectly Aligned Atmospheric Wave Pulse */
+@keyframes waveBreathing {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px rgba(6, 182, 212, 0.45));
+    opacity: 0.9;
+  }
+  50% {
+    filter: drop-shadow(0 0 14px rgba(56, 189, 248, 0.85)) drop-shadow(0 0 22px rgba(6, 182, 212, 0.5));
+    opacity: 1;
+  }
+}
+
+.animate-wave-curve {
+  animation: waveBreathing 3.5s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   Apple Dynamic Island Bottom-Center Toast Notifications
+   ========================================================================== */
+.Toastify__toast-container {
+  z-index: 99999 !important;
+  pointer-events: none !important;
+}
+
+.Toastify__toast-container--bottom-center {
+  bottom: 28px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: auto !important;
+  max-width: 92vw !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+.Toastify__toast {
+  position: relative !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  background: rgba(8, 20, 30, 0.94) !important;
+  backdrop-filter: blur(36px) saturate(220%) !important;
+  -webkit-backdrop-filter: blur(36px) saturate(220%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 9999px !important; /* Full Dynamic Island Pill */
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.85), 0 0 20px -3px rgba(6, 182, 212, 0.35), inset 0 1px 1px 0 rgba(255, 255, 255, 0.25) !important;
+  color: #f8fafc !important;
+  padding: 8px 16px 8px 14px !important;
+  min-height: 42px !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  line-height: 1.35 !important;
+  margin-bottom: 10px !important;
+  overflow: hidden !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease !important;
+}
+
+/* Dynamic Island Entrance Animation */
+.Toastify__slide-enter--bottom-center,
+.Toastify__bounce-enter--bottom-center {
+  animation: dynamicIslandSpringIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+}
+
+/* Dynamic Island Exit Animation (Fixes: Clicking Wrong / X was not dismissing!) */
+.Toastify__slide-exit--bottom-center,
+.Toastify__bounce-exit--bottom-center {
+  animation: dynamicIslandSpringOut 0.25s cubic-bezier(0.4, 0, 1, 1) forwards !important;
+}
+
+@keyframes dynamicIslandSpringIn {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scale(0.82);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dynamicIslandSpringOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.75);
+  }
+}
+
+.Toastify__toast:hover {
+  transform: scale(1.03) !important;
+  box-shadow: 0 24px 60px -8px rgba(0, 0, 0, 0.9), 0 0 28px -2px rgba(6, 182, 212, 0.5) !important;
+}
+
+.Toastify__toast-body {
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+}
+
+.Toastify__toast-icon {
+  width: 20px !important;
+  margin-inline-end: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Success Island Variant */
+.Toastify__toast--success {
+  border: 1px solid rgba(16, 185, 129, 0.45) !important;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.85), 0 0 25px -4px rgba(16, 185, 129, 0.4), inset 0 1px 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+.Toastify__toast--success .Toastify__toast-icon svg {
+  fill: #10b981 !important;
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.8)) !important;
+}
+
+/* Info Island Variant */
+.Toastify__toast--info {
+  border: 1px solid rgba(6, 182, 212, 0.45) !important;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.85), 0 0 25px -4px rgba(6, 182, 212, 0.4), inset 0 1px 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+.Toastify__toast--info .Toastify__toast-icon svg {
+  fill: #06b6d4 !important;
+  filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.8)) !important;
+}
+
+/* Warning Island Variant */
+.Toastify__toast--warning {
+  border: 1px solid rgba(245, 158, 11, 0.45) !important;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.85), 0 0 25px -4px rgba(245, 158, 11, 0.4), inset 0 1px 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+.Toastify__toast--warning .Toastify__toast-icon svg {
+  fill: #f59e0b !important;
+  filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.8)) !important;
+}
+
+/* Error Island Variant */
+.Toastify__toast--error {
+  border: 1px solid rgba(239, 68, 68, 0.45) !important;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.85), 0 0 25px -4px rgba(239, 68, 68, 0.4), inset 0 1px 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+.Toastify__toast--error .Toastify__toast-icon svg {
+  fill: #ef4444 !important;
+  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8)) !important;
+}
+
+/* Close Button (Dynamic Island Pill Style) */
+.Toastify__close-button {
+  color: #94a3b8 !important;
+  opacity: 0.75 !important;
+  transition: all 0.2s ease !important;
+  align-self: center !important;
+  padding: 4px !important;
+  border-radius: 9999px !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  margin-left: 8px !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  z-index: 20 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: none !important;
+  outline: none !important;
+  flex-shrink: 0 !important;
+}
+
+.Toastify__close-button > svg {
+  pointer-events: none !important;
+  width: 14px !important;
+  height: 14px !important;
+  fill: currentColor !important;
+}
+
+.Toastify__close-button:hover {
+  color: #ffffff !important;
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.25) !important;
+  transform: scale(1.15) !important;
+}

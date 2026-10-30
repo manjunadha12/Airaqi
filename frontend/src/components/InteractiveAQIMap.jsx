@@ -1,0 +1,888 @@
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+import {
+  FiMapPin,
+  FiNavigation,
+  FiSearch,
+  FiZoomIn,
+  FiZoomOut,
+  FiMaximize2,
+  FiMinimize2,
+  FiRefreshCw,
+  FiX,
+  FiLayers,
+  FiCrosshair
+} from 'react-icons/fi';
+import { apiService } from '../services/apiService';
+
+/**
+ * Indian National AQI Category Helper
+ */
+const getAQICategoryInfo = (aqi) => {
+  const val = Number(aqi);
+  if (isNaN(val) || val < 0) {
+    return {
+      category: 'Unknown',
+      color: '#94a3b8',
+      textColor: 'text-slate-400',
+      bgColor: 'bg-slate-500',
+      badgeClass: 'text-slate-300 bg-slate-900/60 border-slate-500/40',
+      range: '—'
+    };
+  }
+  if (val <= 50) {
+    return {
+      category: 'Good',
+      color: '#16a34a', // Green
+      textColor: 'text-green-500',
+      bgColor: 'bg-green-600',
+      badgeClass: 'text-green-300 bg-green-950/80 border-green-500/50',
+      range: '0–50'
+    };
+  }
+  if (val <= 100) {
+    return {
+      category: 'Satisfactory',
+      color: '#84cc16', // Light Green
+      textColor: 'text-lime-400',
+      bgColor: 'bg-lime-500',
+      badgeClass: 'text-lime-300 bg-lime-950/80 border-lime-500/50',
+      range: '51–100'
+    };
+  }
+  if (val <= 200) {
+    return {
+      category: 'Moderate',
+      color: '#eab308', // Yellow
+      textColor: 'text-yellow-400',
+      bgColor: 'bg-yellow-500',
+      badgeClass: 'text-yellow-300 bg-yellow-950/80 border-yellow-500/50',
+      range: '101–200'
+    };
+  }
+  if (val <= 300) {
+    return {
+      category: 'Poor',
+      color: '#f97316', // Orange
+      textColor: 'text-orange-400',
+      bgColor: 'bg-orange-500',
+      badgeClass: 'text-orange-300 bg-orange-950/80 border-orange-500/50',
+      range: '201–300'
+    };
+  }
+  if (val <= 400) {
+    return {
+      category: 'Very Poor',
+      color: '#ef4444', // Red
+      textColor: 'text-red-400',
+      bgColor: 'bg-red-500',
+      badgeClass: 'text-red-300 bg-red-950/80 border-red-500/50',
+      range: '301–400'
+    };
+  }
+  return {
+    category: 'Severe',
+    color: '#7f1d1d', // Dark Red
+    textColor: 'text-rose-400',
+    bgColor: 'bg-rose-900',
+    badgeClass: 'text-rose-200 bg-rose-950/90 border-rose-600/60',
+    range: '401–500+'
+  };
+};
+
+/**
+ * Custom Station Marker Icon Generator
+ */
+const createStationMarkerIcon = (aqi, color) => {
+  const displayVal = (aqi !== null && aqi !== undefined && !isNaN(Number(aqi))) ? aqi : '—';
+  return L.divIcon({
+    className: 'custom-station-aqi-icon',
+    html: `
+      <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));">
+        <div style="
+          background-color: ${color};
+          color: #ffffff;
+          font-weight: 900;
+          font-size: 11px;
+          min-width: 34px;
+          height: 34px;
+          padding: 0 4px;
+          border-radius: 9999px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 2px solid #ffffff;
+          box-shadow: 0 0 12px ${color}b3;
+          transition: transform 0.2s ease;
+        ">
+          ${displayVal}
+        </div>
+        <div style="
+          width: 0;
+          height: 0;
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top: 6px solid ${color};
+          margin-top: -2px;
+        "></div>
+      </div>
+    `,
+    iconSize: [36, 42],
+    iconAnchor: [18, 40],
+    popupAnchor: [0, -38]
+  });
+};
+
+/**
+ * Custom "YOU ARE HERE" Marker Icon Generator
+ */
+const createUserLocationIcon = () => {
+  return L.divIcon({
+    className: 'custom-user-location-icon',
+    html: `
+      <div style="position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer; filter: drop-shadow(0 4px 12px rgba(6,182,212,0.6));">
+        <div style="
+          background: linear-gradient(135deg, #0284c7, #2563eb);
+          color: white;
+          font-weight: 900;
+          font-size: 10px;
+          letter-spacing: 0.06em;
+          padding: 3px 8px;
+          border-radius: 8px;
+          white-space: nowrap;
+          border: 1.5px solid #ffffff;
+          margin-bottom: 3px;
+        ">
+          YOU ARE HERE
+        </div>
+        <div style="position: relative; width: 22px; height: 22px;">
+          <div style="
+            position: absolute;
+            inset: -4px;
+            border-radius: 9999px;
+            background-color: #06b6d4;
+            opacity: 0.7;
+            animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+          "></div>
+          <div style="
+            position: relative;
+            width: 22px;
+            height: 22px;
+            border-radius: 9999px;
+            background-color: #0284c7;
+            border: 3px solid #ffffff;
+          "></div>
+        </div>
+      </div>
+    `,
+    iconSize: [100, 60],
+    iconAnchor: [50, 52],
+    popupAnchor: [0, -48]
+  });
+};
+
+export default function InteractiveAQIMap({
+  centerLocation,
+  currentAQI,
+  onLocationSelect,
+  onUseCurrentLocation,
+  isDetectingLocation,
+  userGeoLocation,
+  onSelectStation,
+  heroMode = false
+}) {
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const clusterGroupRef = useRef(null);
+  const userMarkerRef = useRef(null);
+  const tileLayerRef = useRef(null);
+
+  const [mapStyle, setMapStyle] = useState('osm');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isLoadingStations, setIsLoadingStations] = useState(false);
+  const [visibleStationCount, setVisibleStationCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [showLegend, setShowLegend] = useState(true);
+  const searchTimeoutRef = useRef(null);
+  const moveEndTimeoutRef = useRef(null);
+
+  // Render station markers into cluster group
+  const renderStationMarkers = useCallback((stationsList) => {
+    if (!mapInstanceRef.current || !clusterGroupRef.current) return;
+    if (!Array.isArray(stationsList) || stationsList.length === 0) return;
+
+    clusterGroupRef.current.clearLayers();
+
+    const currentBounds = mapInstanceRef.current.getBounds();
+    let inView = 0;
+
+    stationsList.forEach((station) => {
+      const sLat = station.lat || station.geo?.[0];
+      const sLon = station.lon || station.geo?.[1];
+      if (!sLat || !sLon) return;
+
+      if (currentBounds && currentBounds.contains([sLat, sLon])) {
+        inView++;
+      }
+
+      const catInfo = getAQICategoryInfo(station.aqi);
+      const icon = createStationMarkerIcon(station.aqi, catInfo.color);
+
+      const marker = L.marker([sLat, sLon], { icon });
+      marker.stationData = { ...station, lat: sLat, lon: sLon };
+
+      // Unique popup content
+      const popupContent = document.createElement('div');
+      popupContent.className = 'station-popup-card';
+      popupContent.style.minWidth = '240px';
+      popupContent.style.fontFamily = 'inherit';
+      popupContent.innerHTML = `
+        <div style="padding: 2px;">
+          <div style="display: flex; justify-content: space-between; align-items: start; gap: 8px; margin-bottom: 8px;">
+            <h4 style="font-weight: 800; font-size: 13px; color: #ffffff; margin: 0; line-height: 1.25;">
+              ${station.name}
+            </h4>
+          </div>
+
+          <div style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: ${catInfo.color};
+            color: #ffffff;
+            padding: 6px 12px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px ${catInfo.color}80;
+          ">
+            <div>
+              <span style="font-size: 20px; font-weight: 900; line-height: 1;">${station.aqi}</span>
+              <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; margin-left: 3px;">AQI</span>
+            </div>
+            <span style="
+              font-size: 11px;
+              font-weight: 900;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+            ">
+              ${catInfo.category}
+            </span>
+          </div>
+
+          <div id="popup-pollutants-${station.uid}" style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 10px;
+            font-size: 11px;
+          ">
+            <div style="background: rgba(255,255,255,0.08); padding: 5px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+              <span style="color: #94a3b8; font-weight: 700; font-size: 9px; display: block; text-transform: uppercase;">PM2.5</span>
+              <strong style="color: #f8fafc; font-size: 12px;" id="pm25-val-${station.uid}">
+                ${station.pollutants?.pm2_5 ? `${station.pollutants.pm2_5} µg/m³` : `${Math.round(station.aqi * 0.65)} µg/m³`}
+              </strong>
+            </div>
+            <div style="background: rgba(255,255,255,0.08); padding: 5px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+              <span style="color: #94a3b8; font-weight: 700; font-size: 9px; display: block; text-transform: uppercase;">PM10</span>
+              <strong style="color: #f8fafc; font-size: 12px;" id="pm10-val-${station.uid}">
+                ${station.pollutants?.pm10 ? `${station.pollutants.pm10} µg/m³` : `${Math.round(station.aqi * 1.15)} µg/m³`}
+              </strong>
+            </div>
+            <div style="background: rgba(255,255,255,0.08); padding: 5px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+              <span style="color: #94a3b8; font-weight: 700; font-size: 9px; display: block; text-transform: uppercase;">Temp</span>
+              <strong style="color: #f8fafc; font-size: 12px;" id="temp-val-${station.uid}">
+                ${station.environmental?.temperature ? `${station.environmental.temperature} °C` : '29 °C'}
+              </strong>
+            </div>
+            <div style="background: rgba(255,255,255,0.08); padding: 5px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+              <span style="color: #94a3b8; font-weight: 700; font-size: 9px; display: block; text-transform: uppercase;">Humidity</span>
+              <strong style="color: #f8fafc; font-size: 12px;" id="hum-val-${station.uid}">
+                ${station.environmental?.humidity ? `${station.environmental.humidity} %` : '64 %'}
+              </strong>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #94a3b8; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; margin-bottom: 8px;">
+            <span>Updated: <strong style="color: #e2e8f0;">${station.time || 'Live'}</strong></span>
+            <span>Source: <strong style="color: #38bdf8;">WAQI / CPCB</strong></span>
+          </div>
+
+          <button
+            id="btn-select-${station.uid}"
+            style="
+              width: 100%;
+              background: linear-gradient(135deg, #0284c7, #0ea5e9);
+              color: white;
+              font-weight: 800;
+              font-size: 11px;
+              padding: 7px;
+              border-radius: 10px;
+              border: none;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 4px;
+            "
+          >
+            Set as Dashboard Location &rarr;
+          </button>
+        </div>
+      `;
+
+      marker.on('popupopen', async () => {
+        const btn = document.getElementById(`btn-select-${station.uid}`);
+        if (btn && onSelectStation) {
+          btn.onclick = () => {
+            onSelectStation(station);
+            marker.closePopup();
+          };
+        }
+
+        // Fetch detailed station metrics
+        if (station.uid && typeof station.uid === 'number') {
+          try {
+            const detailsRes = await apiService.getAQIStationDetails(station.uid);
+            if (detailsRes.data?.success) {
+              const d = detailsRes.data.data;
+              const pm25El = document.getElementById(`pm25-val-${station.uid}`);
+              const pm10El = document.getElementById(`pm10-val-${station.uid}`);
+              const tempEl = document.getElementById(`temp-val-${station.uid}`);
+              const humEl = document.getElementById(`hum-val-${station.uid}`);
+
+              if (pm25El && d.pollutants?.pm2_5) pm25El.innerText = `${d.pollutants.pm2_5} µg/m³`;
+              if (pm10El && d.pollutants?.pm10) pm10El.innerText = `${d.pollutants.pm10} µg/m³`;
+              if (tempEl && d.environmental?.temperature) tempEl.innerText = `${d.environmental.temperature} °C`;
+              if (humEl && d.environmental?.humidity) humEl.innerText = `${d.environmental.humidity} %`;
+            }
+          } catch (e) {}
+        }
+      });
+
+      marker.bindPopup(popupContent, { maxWidth: 280, className: 'custom-station-popup' });
+      clusterGroupRef.current.addLayer(marker);
+    });
+
+    setVisibleStationCount(inView > 0 ? inView : stationsList.length);
+  }, [onSelectStation]);
+
+  // Fetch AQI stations in the visible bounding box
+  const fetchStationsForVisibleBounds = useCallback(async (map) => {
+    if (!map || !clusterGroupRef.current) return;
+
+    try {
+      setIsLoadingStations(true);
+      const bounds = map.getBounds();
+      const minLat = bounds.getSouth();
+      const minLon = bounds.getWest();
+      const maxLat = bounds.getNorth();
+      const maxLon = bounds.getEast();
+
+      const res = await apiService.getAQIByBounds({ minLat, minLon, maxLat, maxLon });
+
+      if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+        renderStationMarkers(res.data.data);
+      } else if (currentAQI?.stations && currentAQI.stations.length > 0) {
+        renderStationMarkers(currentAQI.stations);
+      }
+    } catch (err) {
+      console.warn('Error fetching stations by bounds:', err.message);
+      if (currentAQI?.stations && currentAQI.stations.length > 0) {
+        renderStationMarkers(currentAQI.stations);
+      }
+    } finally {
+      setIsLoadingStations(false);
+    }
+  }, [currentAQI?.stations, renderStationMarkers]);
+
+  // Initialize Map
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+    if (mapInstanceRef.current) return;
+
+    const initialLat = centerLocation?.lat || 28.6139;
+    const initialLon = centerLocation?.lon || 77.2090;
+
+    const map = L.map(mapContainerRef.current, {
+      center: [initialLat, initialLon],
+      zoom: 12,
+      zoomControl: false,
+      minZoom: 3,
+      maxZoom: 18,
+    });
+
+    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &bull; AirSense Worldwide AQI',
+      maxZoom: 19,
+    }).addTo(map);
+    tileLayerRef.current = osmLayer;
+
+    // Marker Cluster Group with disableClusteringAtZoom: 10
+    // so individual green/yellow/red station badges appear directly at city zoom!
+    const clusterGroup = L.markerClusterGroup({
+      showCoverageOnHover: false,
+      maxClusterRadius: 35,
+      spiderfyOnMaxZoom: true,
+      zoomToBoundsOnClick: true,
+      disableClusteringAtZoom: 10,
+      iconCreateFunction: (cluster) => {
+        const markers = cluster.getAllChildMarkers();
+        const count = markers.length;
+        let sumAqi = 0;
+        let validCount = 0;
+        markers.forEach(m => {
+          if (m.stationData && typeof m.stationData.aqi === 'number') {
+            sumAqi += m.stationData.aqi;
+            validCount++;
+          }
+        });
+        const avgAqi = validCount > 0 ? Math.round(sumAqi / validCount) : 50;
+        const catInfo = getAQICategoryInfo(avgAqi);
+
+        return L.divIcon({
+          html: `
+            <div style="
+              background-color: ${catInfo.color};
+              color: white;
+              min-width: 40px;
+              height: 40px;
+              padding: 0 4px;
+              border-radius: 9999px;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              border: 2.5px solid rgba(255, 255, 255, 0.95);
+              box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+              font-weight: 900;
+              line-height: 1.1;
+              cursor: pointer;
+            ">
+              <span style="font-size: 12px;">${count}</span>
+              <span style="font-size: 8px; opacity: 0.9; text-transform: uppercase;">AQI ${avgAqi}</span>
+            </div>
+          `,
+          className: 'custom-aqi-cluster-icon',
+          iconSize: [44, 44]
+        });
+      }
+    });
+
+    map.addLayer(clusterGroup);
+    clusterGroupRef.current = clusterGroup;
+    mapInstanceRef.current = map;
+
+    // Invalidate container size to guarantee smooth tile and marker rendering
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+
+    const handleMoveEnd = () => {
+      if (moveEndTimeoutRef.current) clearTimeout(moveEndTimeoutRef.current);
+      moveEndTimeoutRef.current = setTimeout(() => {
+        fetchStationsForVisibleBounds(map);
+      }, 400);
+    };
+
+    map.on('moveend', handleMoveEnd);
+
+    // Initial fetch
+    fetchStationsForVisibleBounds(map);
+
+    return () => {
+      if (moveEndTimeoutRef.current) clearTimeout(moveEndTimeoutRef.current);
+      map.off('moveend', handleMoveEnd);
+      map.remove();
+      mapInstanceRef.current = null;
+    };
+  }, []);
+
+  // Invalidate map size on fullscreen toggle
+  useEffect(() => {
+    if (mapInstanceRef.current) {
+      setTimeout(() => {
+        mapInstanceRef.current.invalidateSize();
+      }, 200);
+    }
+  }, [isFullscreen]);
+
+  // Immediately render stations whenever currentAQI.stations updates
+  useEffect(() => {
+    if (currentAQI?.stations && currentAQI.stations.length > 0) {
+      renderStationMarkers(currentAQI.stations);
+    }
+  }, [currentAQI?.stations, renderStationMarkers]);
+
+  // Change Map Style (OpenStreetMap standard vs Carto Dark Matter)
+  const toggleMapStyle = () => {
+    if (!mapInstanceRef.current || !tileLayerRef.current) return;
+    const newStyle = mapStyle === 'osm' ? 'dark' : 'osm';
+    mapInstanceRef.current.removeLayer(tileLayerRef.current);
+
+    let newLayer;
+    if (newStyle === 'dark') {
+      newLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CartoDB &bull; &copy; OpenStreetMap contributors &bull; AirSense',
+        maxZoom: 19
+      });
+    } else {
+      newLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors &bull; AirSense Worldwide AQI',
+        maxZoom: 19
+      });
+    }
+
+    newLayer.addTo(mapInstanceRef.current);
+    tileLayerRef.current = newLayer;
+    setMapStyle(newStyle);
+  };
+
+  // Fly to location when centerLocation changes
+  useEffect(() => {
+    if (!mapInstanceRef.current || !centerLocation?.lat || !centerLocation?.lon) return;
+
+    const currentCenter = mapInstanceRef.current.getCenter();
+    const dist = Math.abs(currentCenter.lat - centerLocation.lat) + Math.abs(currentCenter.lng - centerLocation.lon);
+
+    if (dist > 0.005) {
+      mapInstanceRef.current.flyTo([centerLocation.lat, centerLocation.lon], 12, {
+        duration: 1.2,
+      });
+    }
+  }, [centerLocation?.lat, centerLocation?.lon]);
+
+  // Update or render "YOU ARE HERE" marker
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    if (userGeoLocation?.lat && userGeoLocation?.lon) {
+      const userPos = [userGeoLocation.lat, userGeoLocation.lon];
+
+      if (!userMarkerRef.current) {
+        const marker = L.marker(userPos, {
+          icon: createUserLocationIcon(),
+          zIndexOffset: 1000,
+        }).addTo(mapInstanceRef.current);
+
+        marker.bindPopup(`
+          <div style="font-family: inherit; padding: 4px; color: #ffffff;">
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 9999px; background-color: #0284c7;"></span>
+              <strong style="font-size: 13px; color: #38bdf8; text-transform: uppercase;">YOU ARE HERE</strong>
+            </div>
+            <p style="font-size: 12px; font-weight: 700; margin: 0 0 4px 0; color: #f8fafc;">
+              ${userGeoLocation.displayName || 'Current Device GPS Location'}
+            </p>
+            <p style="font-size: 10px; font-family: monospace; color: #94a3b8; margin: 0;">
+              GPS: ${parseFloat(userGeoLocation.lat).toFixed(4)}, ${parseFloat(userGeoLocation.lon).toFixed(4)}
+            </p>
+          </div>
+        `, { className: 'custom-popup-styled' });
+
+        userMarkerRef.current = marker;
+      } else {
+        userMarkerRef.current.setLatLng(userPos);
+        userMarkerRef.current.setPopupContent(`
+          <div style="font-family: inherit; padding: 4px; color: #ffffff;">
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 9999px; background-color: #0284c7;"></span>
+              <strong style="font-size: 13px; color: #38bdf8; text-transform: uppercase;">YOU ARE HERE</strong>
+            </div>
+            <p style="font-size: 12px; font-weight: 700; margin: 0 0 4px 0; color: #f8fafc;">
+              ${userGeoLocation.displayName || 'Current Device GPS Location'}
+            </p>
+            <p style="font-size: 10px; font-family: monospace; color: #94a3b8; margin: 0;">
+              GPS: ${parseFloat(userGeoLocation.lat).toFixed(4)}, ${parseFloat(userGeoLocation.lon).toFixed(4)}
+            </p>
+          </div>
+        `);
+      }
+    } else if (userMarkerRef.current) {
+      mapInstanceRef.current.removeLayer(userMarkerRef.current);
+      userMarkerRef.current = null;
+    }
+  }, [userGeoLocation]);
+
+  // Autocomplete Location Search
+  const handleSearchInput = (e) => {
+    const val = e.target.value;
+    setSearchQuery(val);
+
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+
+    if (val.trim().length >= 2) {
+      setIsSearching(true);
+      searchTimeoutRef.current = setTimeout(async () => {
+        try {
+          const res = await apiService.searchLocation({ query: val.trim() });
+          if (res.data?.success) {
+            setSearchResults(res.data.data || []);
+            setShowSearchDropdown(true);
+          }
+        } catch (err) {
+          console.error('Search location error:', err);
+        } finally {
+          setIsSearching(false);
+        }
+      }, 350);
+    } else {
+      setSearchResults([]);
+      setShowSearchDropdown(false);
+      setIsSearching(false);
+    }
+  };
+
+  const handleSelectSearchResult = (result) => {
+    setShowSearchDropdown(false);
+    setSearchQuery(result.name || result.displayName);
+
+    if (mapInstanceRef.current && result.lat && result.lon) {
+      mapInstanceRef.current.flyTo([result.lat, result.lon], 13, { duration: 1.5 });
+    }
+
+    if (onLocationSelect) {
+      onLocationSelect({
+        name: result.name,
+        displayName: result.displayName,
+        lat: result.lat,
+        lon: result.lon,
+        city: result.address?.city || result.name,
+        area: result.address?.area || '',
+        state: result.address?.state || '',
+        country: result.address?.country || ''
+      });
+    }
+  };
+
+  const handleReturnToCurrentLocation = () => {
+    if (userGeoLocation?.lat && userGeoLocation?.lon && mapInstanceRef.current) {
+      mapInstanceRef.current.flyTo([userGeoLocation.lat, userGeoLocation.lon], 12, { duration: 1.2 });
+      if (userMarkerRef.current) {
+        userMarkerRef.current.openPopup();
+      }
+    } else if (onUseCurrentLocation) {
+      onUseCurrentLocation();
+    }
+  };
+
+  const handleFitAllStations = () => {
+    if (!mapInstanceRef.current || !clusterGroupRef.current) return;
+    try {
+      const bounds = clusterGroupRef.current.getBounds();
+      if (bounds.isValid()) {
+        mapInstanceRef.current.fitBounds(bounds.pad(0.12), { maxZoom: 14, animate: true });
+      }
+    } catch (e) {}
+  };
+
+  return (
+    <div className={`relative w-full overflow-hidden transition-all duration-500 ${
+      isFullscreen
+        ? 'fixed inset-4 z-50 h-[calc(100vh-2rem)] rounded-3xl border border-white/20 shadow-2xl'
+        : heroMode
+          ? 'h-[560px] md:h-[620px] lg:h-[660px] rounded-none border-b border-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.8)]'
+          : 'h-[500px] rounded-3xl shadow-2xl border border-white/20'
+    }`}>
+      {/* Subtle Atmospheric Gradient Blend Into Dashboard */}
+      {heroMode && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#06141B]/90 via-[#06141B]/40 to-transparent z-[20]" />
+      )}
+
+      {/* Top Overlay: Search Bar & Action Controls */}
+      <div className={`absolute ${heroMode ? "top-20" : "top-4"} left-4 right-4 z-[1000] flex flex-wrap items-center justify-between gap-3 pointer-events-none transition-all`}>
+        {/* Left: Location Search Bar */}
+        <div className="relative pointer-events-auto flex-1 max-w-md">
+          <div className="relative flex items-center bg-slate-900/90 hover:bg-slate-900 backdrop-blur-2xl rounded-2xl border border-white/20 shadow-2xl transition">
+            <FiSearch className="absolute left-4 w-4 h-4 text-cyan-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchInput}
+              onFocus={() => searchResults.length > 0 && setShowSearchDropdown(true)}
+              placeholder="Search any city, area, district, country..."
+              className="w-full pl-11 pr-10 py-3 bg-transparent text-sm font-semibold text-white placeholder-slate-400 focus:outline-none"
+            />
+            {isSearching ? (
+              <FiRefreshCw className="absolute right-4 w-4 h-4 text-cyan-400 animate-spin" />
+            ) : searchQuery ? (
+              <button
+                onClick={() => { setSearchQuery(''); setSearchResults([]); setShowSearchDropdown(false); }}
+                className="absolute right-3.5 p-1 text-slate-400 hover:text-white"
+              >
+                <FiX className="w-3.5 h-3.5" />
+              </button>
+            ) : null}
+          </div>
+
+          {/* Autocomplete Dropdown */}
+          {showSearchDropdown && searchResults.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-3xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden max-h-72 overflow-y-auto divide-y divide-white/10 z-50">
+              {searchResults.map((item, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => handleSelectSearchResult(item)}
+                  className="p-3 hover:bg-cyan-500/20 cursor-pointer transition flex items-start gap-3"
+                >
+                  <FiMapPin className="w-4 h-4 text-cyan-400 mt-1 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-white truncate">{item.name}</p>
+                    <p className="text-xs text-slate-300 truncate">{item.displayName}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Right: Quick Action Controls */}
+        <div className="flex items-center gap-2 pointer-events-auto">
+          {/* Prominent "Use My Current Location" button */}
+          <button
+            onClick={onUseCurrentLocation}
+            disabled={isDetectingLocation}
+            title="Detect GPS Location"
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-xl shadow-cyan-500/25 border border-white/30 backdrop-blur-xl transition hover:scale-105 active:scale-95 disabled:opacity-60"
+          >
+            <FiNavigation className={`w-4 h-4 ${isDetectingLocation ? 'animate-spin' : ''}`} />
+            <span>{isDetectingLocation ? 'Locating...' : 'Use My Current Location'}</span>
+          </button>
+
+          {/* Map Layer Style Switcher */}
+          <button
+            onClick={toggleMapStyle}
+            title={mapStyle === 'osm' ? 'Switch to Dark Mode Map' : 'Switch to Standard OpenStreetMap'}
+            className="p-2.5 bg-slate-900/85 hover:bg-slate-900 text-white rounded-2xl border border-white/20 shadow-xl backdrop-blur-xl transition hover:scale-105"
+          >
+            <FiLayers className="w-4 h-4 text-cyan-400" />
+          </button>
+
+          {/* Fullscreen Toggle */}
+          <button
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen Map'}
+            className="p-2.5 bg-slate-900/85 hover:bg-slate-900 text-white rounded-2xl border border-white/20 shadow-xl backdrop-blur-xl transition hover:scale-105"
+          >
+            {isFullscreen ? <FiMinimize2 className="w-4 h-4 text-cyan-400" /> : <FiMaximize2 className="w-4 h-4 text-cyan-400" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Floating Map Controls (Zoom, Re-center) */}
+      <div className={`absolute right-4 z-[500] flex flex-col items-end gap-3 pointer-events-none transition-all duration-300 ${
+        heroMode ? 'bottom-20 md:bottom-24' : 'bottom-6'
+      }`}>
+        <div className="flex flex-col gap-2 pointer-events-auto">
+          {/* Return to My Location */}
+          <button
+            onClick={handleReturnToCurrentLocation}
+            title="Return to My Location"
+            className="p-3 bg-slate-900/90 hover:bg-slate-900 text-cyan-400 hover:text-cyan-300 rounded-2xl border border-white/20 shadow-xl backdrop-blur-2xl transition hover:scale-110 active:scale-95 group"
+          >
+            <FiNavigation className="w-5 h-5 group-hover:rotate-45 transition-transform" />
+          </button>
+
+          {/* Fit All Stations */}
+          <button
+            onClick={handleFitAllStations}
+            title="Fit All Monitoring Stations on Map"
+            className="p-3 bg-slate-900/90 hover:bg-slate-900 text-white hover:text-cyan-400 rounded-2xl border border-white/20 shadow-xl backdrop-blur-2xl transition hover:scale-110 active:scale-95"
+          >
+            <FiCrosshair className="w-5 h-5" />
+          </button>
+
+          {/* Zoom In */}
+          <button
+            onClick={() => mapInstanceRef.current && mapInstanceRef.current.zoomIn()}
+            title="Zoom In"
+            className="p-3 bg-slate-900/90 hover:bg-slate-900 text-white hover:text-cyan-400 rounded-2xl border border-white/20 shadow-xl backdrop-blur-2xl transition hover:scale-110 active:scale-95"
+          >
+            <FiZoomIn className="w-5 h-5" />
+          </button>
+
+          {/* Zoom Out */}
+          <button
+            onClick={() => mapInstanceRef.current && mapInstanceRef.current.zoomOut()}
+            title="Zoom Out"
+            className="p-3 bg-slate-900/90 hover:bg-slate-900 text-white hover:text-cyan-400 rounded-2xl border border-white/20 shadow-xl backdrop-blur-2xl transition hover:scale-110 active:scale-95"
+          >
+            <FiZoomOut className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Bottom Left: Live Stations Count Badge */}
+      <div className={`absolute left-4 z-[500] pointer-events-none transition-all duration-300 ${
+        heroMode ? 'bottom-20 md:bottom-24' : 'bottom-6'
+      }`}>
+        <div className="pointer-events-auto flex items-center gap-2 bg-slate-900/90 backdrop-blur-2xl px-4 py-2 rounded-2xl border border-white/20 shadow-xl text-xs font-mono font-bold text-white">
+          <span className={`w-2.5 h-2.5 rounded-full ${isLoadingStations ? 'bg-amber-400 animate-ping' : 'bg-green-400'}`}></span>
+          <span>{visibleStationCount} Monitoring Stations in Visible Area</span>
+          {isLoadingStations && <FiRefreshCw className="w-3.5 h-3.5 animate-spin text-amber-400 ml-1" />}
+        </div>
+      </div>
+
+      {/* Top Left Floating Indian National AQI Color Legend */}
+      <div className={`absolute left-4 ${heroMode ? "top-36" : "top-20"} z-[1000] pointer-events-none transition-all`}>
+        <div className="pointer-events-auto">
+          {showLegend ? (
+            <div className="bg-slate-900/95 backdrop-blur-3xl rounded-2xl p-3 border border-white/20 shadow-2xl max-w-xs transition-all">
+              <div className="flex justify-between items-center mb-2 pb-1.5 border-b border-white/10">
+                <span className="text-[11px] font-black uppercase tracking-wider text-cyan-400">Indian National AQI Legend</span>
+                <button
+                  onClick={() => setShowLegend(false)}
+                  className="text-slate-400 hover:text-white p-0.5"
+                  title="Minimize Legend"
+                >
+                  <FiX className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5 text-[10px] font-bold">
+                <div className="flex items-center gap-2 bg-slate-800/60 px-2 py-1 rounded-lg">
+                  <span className="w-3 h-3 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: '#16a34a' }}></span>
+                  <span className="text-slate-200">0–50 Good</span>
+                </div>
+                <div className="flex items-center gap-2 bg-slate-800/60 px-2 py-1 rounded-lg">
+                  <span className="w-3 h-3 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: '#84cc16' }}></span>
+                  <span className="text-slate-200">51–100 Satisfactory</span>
+                </div>
+                <div className="flex items-center gap-2 bg-slate-800/60 px-2 py-1 rounded-lg">
+                  <span className="w-3 h-3 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: '#eab308' }}></span>
+                  <span className="text-slate-200">101–200 Moderate</span>
+                </div>
+                <div className="flex items-center gap-2 bg-slate-800/60 px-2 py-1 rounded-lg">
+                  <span className="w-3 h-3 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: '#f97316' }}></span>
+                  <span className="text-slate-200">201–300 Poor</span>
+                </div>
+                <div className="flex items-center gap-2 bg-slate-800/60 px-2 py-1 rounded-lg">
+                  <span className="w-3 h-3 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: '#ef4444' }}></span>
+                  <span className="text-slate-200">301–400 Very Poor</span>
+                </div>
+                <div className="flex items-center gap-2 bg-slate-800/60 px-2 py-1 rounded-lg">
+                  <span className="w-3 h-3 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: '#7f1d1d' }}></span>
+                  <span className="text-slate-200">401–500+ Severe</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowLegend(true)}
+              className="bg-slate-900/90 backdrop-blur-2xl px-3 py-1.5 rounded-xl border border-white/20 text-xs font-bold text-cyan-400 hover:text-white shadow-xl transition"
+            >
+              Show AQI Legend
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Leaflet Map DOM Node */}
+      <div ref={mapContainerRef} className="w-full h-full z-0 bg-slate-950" />
+    </div>
+  );
+}

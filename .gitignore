@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+yarn.lock
+
+# Environment variables (keep private keys and secrets out of git)
+.env
+.env.local
+.env.*.local
+*.env
+
+# IDE & Editor caches
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.sublime-project
+*.sublime-workspace
+
+# OS metadata
+.DS_Store
+Thumbs.db
+*.key
+*.pem
+
+# Build outputs & Logs
+dist/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Caches
+.cache/
+.eslintcache
+.history/
+.vscode-settings.json
+
+# Runtime Generated Reports (preserve folder with .gitkeep)
+backend/reports/*.pdf
+backend/reports/*.xlsx
+backend/reports/*.csv
+!backend/reports/.gitkeep
+
+# Testing & Coverage
+coverage/
+
+# Local DB Data
+data/

@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: airsense-cloud
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: npm run install:all && npm run build
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRE
+        value: 7d
+      - key: REFRESH_TOKEN_SECRET
+        generateValue: true
+      - key: REFRESH_TOKEN_EXPIRE
+        value: 30d
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_SECURE
+        value: false
+      - key: SMTP_USER
+        value: airindexaqi@gmail.com
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        value: "AQI Index AirSense <airindexaqi@gmail.com>"
+      - key: GOOGLE_CLIENT_ID
+        value: 504324038442-8jp02senqb62ddjo7eardoldebkp92bv.apps.googleusercontent.com
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: WAQI_TOKEN
+        value: 348139bbe66e1ceb85262d81e1d06bdf7d753d73
+
