@@ -139,7 +139,7 @@ export default function Login() {
       // Login mode only: fails with accountNotFound if no account exists yet
       const res = await apiService.googleAuth(response.credential, 'login', false);
       if (res.data?.success) {
-        login(res.data.user, res.data.accessToken, res.data.refreshToken);
+        login(res.data.user, res.data.accessToken, res.data.refreshToken, res.data.sessionId);
         const destination =
           location.state?.from?.pathname && location.state.from.pathname !== '/login'
             ? location.state.from.pathname
@@ -170,7 +170,7 @@ export default function Login() {
       const res = await apiService.googleAuth(googlePromptUser.credential, 'register', true);
       if (res.data?.success) {
         setGooglePromptModal(false);
-        login(res.data.user, res.data.accessToken, res.data.refreshToken);
+        login(res.data.user, res.data.accessToken, res.data.refreshToken, res.data.sessionId);
         navigate('/dashboard', { replace: true });
       }
     } catch (err) {
@@ -244,7 +244,8 @@ export default function Login() {
         login(
           response.data.user,
           response.data.accessToken,
-          response.data.refreshToken
+          response.data.refreshToken,
+          response.data.sessionId
         );
         const destination =
           location.state?.from?.pathname && location.state.from.pathname !== '/login'

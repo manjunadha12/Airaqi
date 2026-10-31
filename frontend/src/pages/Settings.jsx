@@ -17,6 +17,10 @@ import {
   FiSave,
   FiRefreshCw,
   FiLogOut,
+  FiMonitor,
+  FiSmartphone,
+  FiTablet,
+  FiShield,
   FiDownload,
   FiCheckCircle,
   FiClock,
@@ -107,6 +111,99 @@ export default function Settings() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+
+  // Active Sessions State
+  const [sessions, setSessions] = useState([]);
+  const [currentSessionId, setCurrentSessionId] = useState(() => localStorage.getItem('sessionId') || '');
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [revokingSessionId, setRevokingSessionId] = useState(null);
+  const [loggingOutAll, setLoggingOutAll] = useState(false);
+
+  // Fetch active sessions
+  const fetchSessions = async (showToast = false) => {
+    setLoadingSessions(true);
+    try {
+      const res = await apiService.getSessions({ location: locationTitle });
+      if (res.data?.success) {
+        setSessions(res.data.sessions || []);
+        if (res.data.currentSessionId) {
+          setCurrentSessionId(res.data.currentSessionId);
+          localStorage.setItem('sessionId', res.data.currentSessionId);
+        }
+        if (showToast) {
+          toast.success('Active sessions synchronized');
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch active device sessions:', err);
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'security') {
+      fetchSessions();
+    }
+  }, [activeTab]);
+
+  // Revoke / Log Out a specific session
+  const handleRevokeSession = async (sessionIdToRevoke, deviceLabel) => {
+    if (!sessionIdToRevoke) return;
+    setRevokingSessionId(sessionIdToRevoke);
+    try {
+      const res = await apiService.deleteSession(sessionIdToRevoke);
+      if (res.data?.success) {
+        setSessions((prev) => prev.filter((s) => s.sessionId !== sessionIdToRevoke));
+        toast.success(`Logged out ${deviceLabel || 'device'} successfully`);
+      } else {
+        toast.error(res.data?.message || 'Failed to log out device');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to terminate device session');
+    } finally {
+      setRevokingSessionId(null);
+    }
+  };
+
+  // Log Out All Other Devices
+  const handleRevokeAllOtherSessions = async () => {
+    setLoggingOutAll(true);
+    try {
+      const res = await apiService.clearOtherSessions({ currentSessionId });
+      if (res.data?.success) {
+        setSessions((prev) => prev.filter((s) => s.sessionId === currentSessionId));
+        toast.success('All other devices have been logged out');
+      } else {
+        toast.error(res.data?.message || 'Failed to log out other devices');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to terminate other sessions');
+    } finally {
+      setLoggingOutAll(false);
+    }
+  };
+
+  // Log out current device
+  const handleLogoutCurrentDevice = () => {
+    logout();
+    toast.info('Signed out from this device');
+    window.location.href = '/login';
+  };
+
+  const formatTimeAgo = (dateStr) => {
+    if (!dateStr) return 'Active recently';
+    const diffMs = Date.now() - new Date(dateStr).getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHr = Math.floor(diffMin / 60);
+    const diffDays = Math.floor(diffHr / 24);
+
+    if (diffSec < 45) return 'Active right now';
+    if (diffMin < 60) return `Active ${diffMin} min${diffMin === 1 ? '' : 's'} ago`;
+    if (diffHr < 24) return `Active ${diffHr} hr${diffHr === 1 ? '' : 's'} ago`;
+    return `Active ${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+  };
 
   // New Place modal/input state
   const [newPlaceName, setNewPlaceName] = useState('');
@@ -1104,27 +1201,166 @@ export default function Settings() {
               </div>
             </form>
 
-            {/* Active Device Session */}
-            <div className="p-6 rounded-2xl bg-[#06141B] border border-white/10 space-y-4">
-              <h3 className="text-sm font-black text-white uppercase tracking-wider">Active Device Session</h3>
-              <div className="p-4 rounded-xl bg-[#11212D] border border-cyan-500/30 flex items-center justify-between flex-wrap gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold">
-                    PC
+            {/* Active Device Sessions */}
+            <div className="p-5 sm:p-6 rounded-2xl bg-[#06141B] border border-white/10 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-white/10">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-black text-white uppercase tracking-wider">Active Device Sessions</h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                      {sessions.length || 1} {sessions.length === 1 ? 'Device' : 'Devices'} Connected
+                    </span>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs font-bold text-white">Current Browser Session</p>
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                        Active
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      Location: {locationTitle} &bull; Security: SSL/TLS Encrypted
-                    </p>
-                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Manage active sign-ins across your laptop, desktop, mobile phone, and tablet browsers.
+                  </p>
                 </div>
-                <span className="text-xs text-emerald-400 font-mono font-bold">Secure</span>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => fetchSessions(true)}
+                    disabled={loadingSessions}
+                    className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-50"
+                    title="Refresh device sessions"
+                  >
+                    <FiRefreshCw className={`w-3.5 h-3.5 ${loadingSessions ? 'animate-spin text-cyan-400' : ''}`} />
+                    <span className="hidden sm:inline">Sync</span>
+                  </button>
+
+                  {sessions.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={handleRevokeAllOtherSessions}
+                      disabled={loggingOutAll}
+                      className="px-3.5 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 hover:text-white text-xs font-black uppercase tracking-wider transition flex items-center gap-1.5 disabled:opacity-50 shadow-sm"
+                    >
+                      <FiLogOut className="w-3.5 h-3.5" />
+                      <span>Log Out All Other Devices</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Session cards */}
+              <div className="space-y-3">
+                {sessions.length === 0 ? (
+                  <div className="p-4 rounded-xl bg-[#11212D] border border-cyan-500/30 flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold">
+                        <FiMonitor className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-bold text-white">Current Browser Session</p>
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                            THIS DEVICE (ACTIVE)
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          Location: {locationTitle} &bull; Security: SSL/TLS Encrypted
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs text-emerald-400 font-mono font-bold flex items-center gap-1">
+                      <FiShield className="w-3.5 h-3.5" /> Secure
+                    </span>
+                  </div>
+                ) : (
+                  sessions.map((session) => {
+                    const isCurrent = session.sessionId === currentSessionId;
+                    const isMobile = session.deviceType === 'mobile';
+                    const isTablet = session.deviceType === 'tablet';
+
+                    return (
+                      <div
+                        key={session.sessionId}
+                        className={`p-4 rounded-xl transition border flex flex-col md:flex-row md:items-center justify-between gap-3 ${
+                          isCurrent
+                            ? 'bg-[#11212D] border-cyan-500/40 shadow-lg shadow-cyan-950/20'
+                            : 'bg-[#0a1822] border-white/10 hover:border-white/20'
+                        }`}
+                      >
+                        <div className="flex items-start sm:items-center gap-3">
+                          <div
+                            className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold shrink-0 ${
+                              isMobile
+                                ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
+                                : isTablet
+                                ? 'bg-indigo-500/15 border border-indigo-500/30 text-indigo-400'
+                                : 'bg-cyan-500/15 border border-cyan-500/30 text-cyan-400'
+                            }`}
+                          >
+                            {isMobile ? (
+                              <FiSmartphone className="w-5 h-5" />
+                            ) : isTablet ? (
+                              <FiTablet className="w-5 h-5" />
+                            ) : (
+                              <FiMonitor className="w-5 h-5" />
+                            )}
+                          </div>
+
+                          <div className="min-w-0">
+                            <div className="flex items-center flex-wrap gap-2">
+                              <p className="text-xs font-black text-white truncate">
+                                {session.deviceName || (isMobile ? 'Mobile Phone' : 'Laptop / PC')}
+                              </p>
+
+                              {isCurrent ? (
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                                  THIS DEVICE (ACTIVE)
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                                  {isMobile ? 'MOBILE' : isTablet ? 'TABLET' : 'REMOTE PC'}
+                                </span>
+                              )}
+                            </div>
+
+                            <p className="text-[11px] text-slate-400 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                              <span>Location: <span className="text-slate-300 font-medium">{session.location || locationTitle}</span></span>
+                              <span className="hidden sm:inline">&bull;</span>
+                              <span>{formatTimeAgo(session.lastActive)}</span>
+                              <span className="hidden sm:inline">&bull;</span>
+                              <span className="text-emerald-400/90 font-mono text-[10px] flex items-center gap-1">
+                                <FiShield className="w-3 h-3" /> SSL/TLS Encrypted
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Logout / Revoke Button */}
+                        <div className="flex items-center justify-end gap-2 shrink-0 pt-2 md:pt-0 border-t border-white/5 md:border-t-0">
+                          {isCurrent ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-emerald-400 font-mono font-bold flex items-center gap-1 hidden sm:flex">
+                                <FiShield className="w-3.5 h-3.5" /> Secure
+                              </span>
+                              <button
+                                type="button"
+                                onClick={handleLogoutCurrentDevice}
+                                className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-rose-500/20 border border-white/10 hover:border-rose-500/30 text-slate-300 hover:text-rose-300 text-xs font-bold transition flex items-center gap-1.5"
+                                title="Sign out from this device"
+                              >
+                                <FiLogOut className="w-3.5 h-3.5" />
+                                <span>Log Out</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleRevokeSession(session.sessionId, session.deviceName)}
+                              disabled={revokingSessionId === session.sessionId}
+                              className="w-full sm:w-auto px-3.5 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 hover:text-white text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                            >
+                              <FiLogOut className="w-3.5 h-3.5" />
+                              <span>{revokingSessionId === session.sessionId ? 'Logging Out...' : 'Log Out Device'}</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>

@@ -21,6 +21,15 @@ apiClient.interceptors.request.use((req) => {
       req.headers.Authorization = `Bearer ${token}`;
     }
   }
+  const sessionId = localStorage.getItem('sessionId');
+  if (sessionId) {
+    if (req.headers && typeof req.headers.set === 'function') {
+      req.headers.set('X-Session-Id', sessionId);
+    } else {
+      req.headers = req.headers || {};
+      req.headers['X-Session-Id'] = sessionId;
+    }
+  }
   return req;
 });
 
@@ -29,6 +38,18 @@ apiClient.interceptors.response.use(
   (res) => res,
   async (error) => {
     const originalRequest = error.config;
+
+    // Immediate redirect if session was revoked on another device
+    if (error.response?.data?.sessionRevoked) {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('sessionId');
+      localStorage.removeItem('user');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login?revoked=true';
+      }
+      return Promise.reject(error);
+    }
 
     // If token expired on protected requests, try to refresh
     const isAuthRoute =
@@ -65,6 +86,7 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem('sessionId');
         localStorage.removeItem('user');
         if (window.location.pathname !== '/login') {
           window.location.href = '/login';
@@ -103,6 +125,9 @@ export const apiService = {
   getOrganizations: () => apiClient.get(endpoints.AUTH_ORGANIZATIONS),
   updateProfile: (data) => apiClient.put(endpoints.AUTH_UPDATE_PROFILE, data),
   changePassword: (data) => apiClient.post(endpoints.AUTH_CHANGE_PASSWORD, data),
+  getSessions: (params) => apiClient.get(endpoints.AUTH_SESSIONS, { params }),
+  deleteSession: (sessionId) => apiClient.delete(endpoints.AUTH_DELETE_SESSION(sessionId)),
+  clearOtherSessions: (data) => apiClient.delete(endpoints.AUTH_CLEAR_OTHER_SESSIONS, { data }),
 
   // AQI
   getCurrentAQI: (params) =>

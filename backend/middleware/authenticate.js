@@ -47,6 +47,19 @@ const authenticate = async (req, res, next) => {
       });
     }
 
+    // If device session was revoked from another device
+    const sessionIdHeader = req.headers['x-session-id'];
+    if (sessionIdHeader && Array.isArray(user.activeSessions) && user.activeSessions.length > 0) {
+      const sessionExists = user.activeSessions.some((s) => s.sessionId === sessionIdHeader);
+      if (!sessionExists) {
+        return res.status(401).json({
+          success: false,
+          sessionRevoked: true,
+          message: 'This device session has been logged out from another device. Please sign in again.',
+        });
+      }
+    }
+
     req.user = user;
     req.userId = user._id;
     next();

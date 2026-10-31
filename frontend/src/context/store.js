@@ -46,9 +46,10 @@ export const useAuthStore = create((set) => ({
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
 
-  login: (user, token, refreshToken) => {
+  login: (user, token, refreshToken, sessionId) => {
     if (token) localStorage.setItem('accessToken', token);
     if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+    if (sessionId) localStorage.setItem('sessionId', sessionId);
     if (user) localStorage.setItem('user', JSON.stringify(user));
     set({
       user,
@@ -61,6 +62,7 @@ export const useAuthStore = create((set) => ({
   logout: () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    localStorage.removeItem('sessionId');
     localStorage.removeItem('user');
     set({
       user: null,

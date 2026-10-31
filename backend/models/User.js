@@ -113,6 +113,24 @@ const userSchema = new mongoose.Schema(
         userAgent: String,
       },
     ],
+    activeSessions: [
+      {
+        sessionId: { type: String, required: true },
+        deviceType: {
+          type: String,
+          enum: ['desktop', 'mobile', 'tablet', 'unknown'],
+          default: 'desktop',
+        },
+        deviceName: { type: String, default: 'Web Browser' },
+        browser: { type: String, default: 'Browser' },
+        os: { type: String, default: 'Unknown OS' },
+        ip: { type: String, default: '' },
+        location: { type: String, default: '' },
+        userAgent: { type: String, default: '' },
+        lastActive: { type: Date, default: Date.now },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   {
     timestamps: true,

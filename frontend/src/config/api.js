@@ -40,6 +40,9 @@ export const endpoints = {
   AUTH_ORGANIZATIONS: `${API_URL}/auth/organizations`,
   AUTH_UPDATE_PROFILE: `${API_URL}/auth/profile`,
   AUTH_CHANGE_PASSWORD: `${API_URL}/auth/change-password`,
+  AUTH_SESSIONS: `${API_URL}/auth/sessions`,
+  AUTH_DELETE_SESSION: (id) => `${API_URL}/auth/sessions/${id}`,
+  AUTH_CLEAR_OTHER_SESSIONS: `${API_URL}/auth/sessions/other`,
 
   // AQI
   AQI_CURRENT: `${API_URL}/aqi/current`,

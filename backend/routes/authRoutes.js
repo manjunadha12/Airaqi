@@ -15,6 +15,9 @@ const {
   getOrganizations,
   updateProfile,
   changePassword,
+  getActiveSessions,
+  deleteSession,
+  deleteAllOtherSessions,
 } = require('../controllers/authController');
 const {
   validateEmail,
@@ -59,4 +62,8 @@ router.put('/profile', authenticate, updateProfile);
 router.post('/change-password', authenticate, changePassword);
 router.get('/organizations', getOrganizations);
 
+// Active Device Sessions Management
+router.get('/sessions', authenticate, getActiveSessions);
+router.delete('/sessions/other', authenticate, deleteAllOtherSessions);
+router.delete('/sessions/:sessionId', authenticate, deleteSession);
 module.exports = router;

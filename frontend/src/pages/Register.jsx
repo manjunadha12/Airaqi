@@ -121,7 +121,7 @@ export default function Register() {
     try {
       const res = await apiService.googleAuth(response.credential, 'register', true);
       if (res.data?.success) {
-        login(res.data.user, res.data.accessToken, res.data.refreshToken);
+        login(res.data.user, res.data.accessToken, res.data.refreshToken, res.data.sessionId);
         navigate('/dashboard', { replace: true });
       }
     } catch (err) {
@@ -245,7 +245,7 @@ export default function Register() {
 
       if (response.data?.success) {
         if (response.data.accessToken && response.data.user) {
-          login(response.data.user, response.data.accessToken, response.data.refreshToken);
+          login(response.data.user, response.data.accessToken, response.data.refreshToken, response.data.sessionId);
           navigate('/dashboard', { replace: true });
         } else {
           navigate('/login', {
