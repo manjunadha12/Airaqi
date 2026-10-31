@@ -249,6 +249,22 @@ export default function InteractiveAQIMap({
   const [showLegend, setShowLegend] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768);
   const searchTimeoutRef = useRef(null);
   const moveEndTimeoutRef = useRef(null);
+  const searchContainerRef = useRef(null);
+
+  // Close search dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setShowSearchDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, []);
 
   // Render station markers into cluster group
   const renderStationMarkers = useCallback((stationsList) => {
@@ -723,7 +739,7 @@ export default function InteractiveAQIMap({
       {/* Top Overlay: Search Bar & Action Controls */}
       <div className={`absolute ${heroMode ? "top-16 sm:top-20" : "top-3 sm:top-4"} left-3 right-3 sm:left-4 sm:right-4 z-[1000] flex flex-wrap items-center justify-between gap-2 sm:gap-3 pointer-events-none transition-all`}>
         {/* Left: Location Search Bar */}
-        <div className="relative pointer-events-auto flex-1 max-w-md">
+        <div ref={searchContainerRef} className="relative pointer-events-auto flex-1 max-w-md z-[2000]">
           <div className="relative flex items-center bg-slate-900/90 hover:bg-slate-900 backdrop-blur-2xl rounded-2xl border border-white/20 shadow-2xl transition">
             <FiSearch className="absolute left-4 w-4 h-4 text-cyan-400" />
             <input
@@ -748,7 +764,7 @@ export default function InteractiveAQIMap({
 
           {/* Autocomplete Dropdown */}
           {showSearchDropdown && searchResults.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-3xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden max-h-72 overflow-y-auto divide-y divide-white/10 z-50">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900/98 backdrop-blur-3xl rounded-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-hidden max-h-72 overflow-y-auto divide-y divide-white/10 z-[2100]">
               {searchResults.map((item, idx) => (
                 <div
                   key={idx}
@@ -855,8 +871,9 @@ export default function InteractiveAQIMap({
         </div>
       </div>
 
-      {/* Top Left Floating Indian National AQI Color Legend */}
-      <div className={`absolute left-4 ${heroMode ? "top-36" : "top-20"} z-[1000] pointer-events-none transition-all`}>
+      {/* Floating Indian National AQI Color Legend (Right-docked to eliminate overlap with search dropdown) */}
+      <div className={`absolute right-3 sm:right-4 ${heroMode ? "top-32 sm:top-36" : "top-16 sm:top-20"} z-[900] pointer-events-none transition-all duration-300 ${showSearchDropdown && searchResults.length > 0 ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+
         <div className="pointer-events-auto">
           {showLegend ? (
             <div className="bg-slate-900/95 backdrop-blur-3xl rounded-2xl p-3 border border-white/20 shadow-2xl max-w-xs transition-all">
