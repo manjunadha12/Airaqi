@@ -1,192 +1,160 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import {
-  FiHome,
-  FiTrendingUp,
-  FiBell,
-  FiDownload,
-  FiSettings,
-  FiBarChart2
-} from 'react-icons/fi';
+import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { 
+  LayoutDashboard, 
+  Wind, 
+  Map, 
+  BrainCircuit, 
+  Building2, 
+  History, 
+  ChartNoAxesCombined, 
+  Bell, 
+  Settings, 
+  User, 
+  LogOut,
+  Leaf
+} from 'lucide-react';
 import { useAuthStore } from '../context/store';
+import { apiService } from '../services/apiService';
 
-export default function Sidebar({ collapsed, isPinned, onTogglePin, onItemClick }) {
-  const { user } = useAuthStore();
+const Sidebar = ({ onItemClick, isMobile = false }) => {
+  const { logout } = useAuthStore();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [activeRoute, setActiveRoute] = useState(() => {
+    if (location.pathname === '/predictions') return 'AI Predictions';
+    if (location.pathname === '/reports') return 'City Reports';
+    if (location.pathname === '/analytics') return 'Data Visualization';
+    if (location.pathname === '/alerts') return 'Alerts';
+    if (location.pathname === '/settings') return 'Settings';
+    return 'Dashboard';
+  });
 
-  const menuItems = [
-    {
-      icon: FiHome,
-      label: 'Dashboard',
-      path: '/dashboard',
-      badge: 'LIVE',
-      badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-    },
-    {
-      icon: FiTrendingUp,
-      label: 'AI Predictions',
-      path: '/predictions',
-      badge: 'FORECAST',
-      badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
-    },
-    {
-      icon: FiDownload,
-      label: 'City Reports & History',
-      path: '/reports',
-      badge: 'AUDIT',
-      badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/30'
-    },
-    {
-      icon: FiBarChart2,
-      label: 'Analytics Matrix',
-      path: '/analytics',
-      badge: 'PRO',
-      badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/30'
-    },
-    {
-      icon: FiBell,
-      label: 'Incident Alerts',
-      path: '/alerts',
-      ping: true
-    },
-    {
-      icon: FiSettings,
-      label: 'Cloud Settings',
-      path: '/settings'
-    },
+  const navItems = [
+    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { name: 'Live AQI', path: '/dashboard', icon: Wind },
+    { name: 'Air Quality Map', path: '/dashboard', icon: Map },
+    { name: 'AI Predictions', path: '/predictions', icon: BrainCircuit },
+    { name: 'City Reports', path: '/reports', icon: Building2 },
+    { name: 'Historical Analysis', path: '/reports', icon: History },
+    { name: 'Data Visualization', path: '/analytics', icon: ChartNoAxesCombined },
+    { name: 'Alerts', path: '/alerts', icon: Bell },
   ];
 
+  const bottomItems = [
+    { name: 'Profile', path: '/settings', icon: User },
+    { name: 'Settings', path: '/settings', icon: Settings },
+    { name: 'Logout', action: 'logout', icon: LogOut },
+  ];
+
+  const handleLogout = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (onItemClick) onItemClick();
+
+    logout();
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+
+    try {
+      apiService.logout().catch(() => {});
+    } catch (err) {}
+
+    window.location.href = '/login';
+  };
+
+  const handleItemClick = (item) => {
+    setActiveRoute(item.name);
+    if (onItemClick) onItemClick();
+
+    if (item.action === 'logout') {
+      handleLogout();
+      return;
+    }
+
+    if (item.path) {
+      if (item.name === 'Live AQI' && location.pathname === '/dashboard') {
+        window.scrollTo({ top: 380, behavior: 'smooth' });
+      } else if (item.name === 'Air Quality Map' && location.pathname === '/dashboard') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        navigate(item.path);
+      }
+    }
+  };
+
+  const NavIcon = ({ item }) => {
+    const isCurrentPath = 
+      (item.path === '/dashboard' && location.pathname === '/dashboard') ||
+      (item.path === '/predictions' && location.pathname === '/predictions') ||
+      (item.path === '/reports' && location.pathname === '/reports') ||
+      (item.path === '/analytics' && location.pathname === '/analytics') ||
+      (item.path === '/alerts' && location.pathname === '/alerts') ||
+      (item.path === '/settings' && location.pathname === '/settings');
+
+    const isActive = activeRoute === item.name || (isCurrentPath && activeRoute === item.name);
+    const Icon = item.icon;
+    
+    return (
+      <div className="relative group w-full flex justify-center py-2">
+        <button
+          onClick={() => handleItemClick(item)}
+          className={`relative z-10 flex items-center justify-center w-11 h-11 rounded-full transition-all duration-300 ease-out
+            ${isActive 
+              ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)] scale-110' 
+              : 'bg-white dark:bg-slate-900 text-gray-400 dark:text-slate-400 hover:text-blue-500 dark:hover:text-cyan-400 hover:scale-110 hover:shadow-md border border-gray-100 dark:border-white/10'
+            }`}
+        >
+          <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+        </button>
+
+        {/* Tooltip */}
+        <div className="absolute left-[70px] top-1/2 -translate-y-1/2 px-3 py-1.5 bg-gray-800 dark:bg-slate-900 text-white text-xs font-medium rounded-lg opacity-0 -translate-x-3 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 z-50 whitespace-nowrap shadow-xl border border-transparent dark:border-white/10">
+          {item.name}
+          {/* Tooltip triangle pointer */}
+          <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-gray-800 dark:bg-slate-900 rotate-45 border-l border-b border-transparent dark:border-white/10"></div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <nav className="h-full flex flex-col p-3 select-none justify-between overflow-visible">
-      {/* Top: Brand Emblem & Pin Control */}
-      <div>
-        <div className={`mb-6 flex items-center ${collapsed ? 'justify-center' : 'justify-start'} px-1 pt-1`}>
-          <Link
-            to="/dashboard"
-            onClick={() => onItemClick && onItemClick()}
-            className="flex items-center gap-3 group relative"
-          >
-            {/* Logo Emblem (Crisp, No Neon Glow) */}
-            <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500/30 via-blue-500/20 to-indigo-600/20 p-[1px] flex-shrink-0 transition-transform duration-300 group-hover:scale-105 border border-white/15">
-              <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <span className="font-black text-sm tracking-wider bg-gradient-to-r from-cyan-300 via-sky-300 to-blue-400 bg-clip-text text-transparent">
-                  AP
-                </span>
-              </div>
-            </div>
+    <aside className={`h-screen w-[72px] bg-[#f8fafc] dark:bg-[#06141B]/95 backdrop-blur-2xl flex flex-col items-center py-6 z-40 border-r border-gray-200/50 dark:border-white/10 select-none ${
+      isMobile ? 'relative h-full' : 'fixed left-0 top-0 hidden md:flex'
+    }`}>
+      
+      {/* The Single Continuous Vertical Line */}
+      <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-gray-200 dark:bg-slate-700/60 z-0"></div>
 
-            {!collapsed && (
-              <div className="flex flex-col overflow-hidden transition-all duration-300">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-black text-white text-base tracking-tight whitespace-nowrap">
-                    AirSense
-                  </span>
-                  <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-cyan-950/80 text-cyan-400 border border-cyan-500/30">
-                    PRO
-                  </span>
-                </div>
-                <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 whitespace-nowrap flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Enterprise AI
-                </span>
-              </div>
-            )}
-
-            {collapsed && (
-              <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-xl bg-slate-950/95 border border-white/20 shadow-2xl backdrop-blur-3xl text-xs font-bold text-cyan-300 whitespace-nowrap z-50 pointer-events-none opacity-0 group-hover:opacity-100 group-hover:translate-x-0 translate-x-1 transition-all duration-200">
-                AirSense Pro
-              </div>
-            )}
-          </Link>
-        </div>
-
-        {/* Navigation Menu List */}
-        <div className="space-y-2">
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <div key={item.path} className="relative group/item flex justify-center">
-                <Link
-                  to={item.path}
-                  onClick={() => onItemClick && onItemClick()}
-                  className={`relative flex items-center ${
-                    collapsed
-                      ? 'w-11 h-11 justify-center rounded-xl'
-                      : 'w-full gap-3 px-3.5 py-2.5 rounded-xl'
-                  } transition-all duration-200 ${
-                    isActive
-                      ? 'text-cyan-400 font-bold bg-white/[0.04]'
-                      : 'text-slate-400 hover:text-white hover:bg-white/[0.06] font-medium'
-                  }`}
-                >
-                  {/* Single Line Active Indicator (Crisp, No Glow Effect) */}
-                  {isActive && (
-                    <span className={`absolute left-0 w-1 ${collapsed ? 'h-5 top-1/2 -translate-y-1/2' : 'top-2.5 bottom-2.5'} bg-cyan-400 rounded-r-full`} />
-                  )}
-
-                  <div className="relative">
-                    <item.icon
-                      className={`w-5 h-5 flex-shrink-0 transition-colors duration-200 ${
-                        isActive ? 'text-cyan-400' : 'text-slate-400 group-hover/item:text-slate-200'
-                      }`}
-                    />
-                    {item.ping && (
-                      <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
-                    )}
-                  </div>
-
-                  {!collapsed && (
-                    <div className="flex items-center justify-between flex-1 min-w-0">
-                      <span className="text-xs tracking-wide whitespace-nowrap overflow-hidden text-ellipsis">
-                        {item.label}
-                      </span>
-                      {item.badge && (
-                        <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${item.badgeColor || 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'}`}>
-                          {item.badge}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </Link>
-
-                {/* Floating Tooltip in Collapsed Mode */}
-                {collapsed && (
-                  <div className="absolute left-full ml-3.5 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-2xl bg-slate-950/95 border border-white/20 shadow-[0_12px_30px_rgba(0,0,0,0.8)] backdrop-blur-3xl text-xs font-bold text-white whitespace-nowrap z-50 pointer-events-none opacity-0 group-hover/item:opacity-100 group-hover/item:translate-x-0 translate-x-1 transition-all duration-200 flex items-center gap-2">
-                    <span>{item.label}</span>
-                    {item.badge && (
-                      <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md border ${item.badgeColor || 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'}`}>
-                        {item.badge}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+      {/* Logo Section */}
+      <div className="relative z-10 mb-6 bg-transparent py-2 px-1">
+        <button
+          onClick={() => {
+            setActiveRoute('Dashboard');
+            navigate('/dashboard');
+          }}
+          className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center text-white shadow-lg transition-transform duration-300 hover:scale-105 active:scale-95"
+          title="AirSense Cloud"
+        >
+          <Leaf size={24} strokeWidth={2.5} />
+        </button>
       </div>
 
-      {/* Bottom Area: Clean Divider & Optional User Profile */}
-      <div className="pt-2 border-t border-white/10">
-        {user && !collapsed && (
-          <div className="p-2.5 bg-slate-900/60 rounded-2xl border border-white/10 backdrop-blur-2xl flex items-center justify-between">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white font-black text-xs shrink-0">
-                {user.firstName?.charAt(0) || 'U'}
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-black text-white truncate leading-tight">
-                  {user.firstName} {user.lastName}
-                </p>
-                <p className="text-[10px] font-bold text-cyan-400 truncate capitalize leading-none mt-0.5">
-                  {user.role?.replace('_', ' ') || 'Analyst'}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+      {/* Main Navigation */}
+      <nav className="relative z-10 flex-1 w-full flex flex-col items-center overflow-y-auto scrollbar-hide py-1 bg-transparent">
+        {navItems.map((item) => (
+          <NavIcon key={item.name} item={item} />
+        ))}
+      </nav>
+
+      {/* Bottom Section */}
+      <div className="relative z-10 mt-auto pt-3 flex flex-col items-center w-full bg-transparent pb-2">
+        {bottomItems.map((item) => (
+          <NavIcon key={item.name} item={item} />
+        ))}
       </div>
-    </nav>
+    </aside>
   );
-}
+};
+
+export default Sidebar;
