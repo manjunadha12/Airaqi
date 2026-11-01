@@ -283,13 +283,18 @@ const generateLocalStationsInBounds = (minLat, minLon, maxLat, maxLon, baseAQI, 
   const isChennaiWest = Math.abs(cLat - 13.02) < 0.20 && Math.abs(cLon - 80.05) < 0.20;
 
   const namedPoints = isChennaiWest ? [
+    { lat: 13.0285, lon: 80.0195, name: 'Saveetha University Ambient Monitor' },
+    { lat: 13.0810, lon: 80.0226, name: 'Nemam Air Quality Station' },
     { lat: 13.0215, lon: 80.0385, name: 'Chembarambakkam Lake Ambient Station' },
     { lat: 13.0482, lon: 80.0965, name: 'Poonamallee Bypass Air Monitor' },
     { lat: 13.0290, lon: 79.9980, name: 'Chettipedu Industrial Area Sensor' },
     { lat: 13.0360, lon: 80.0150, name: 'Mevalurkuppam Ambient Station' },
     { lat: 13.0460, lon: 80.0650, name: 'Nazarathpet Environmental Sensor' },
+    { lat: 13.0227, lon: 80.0390, name: 'Pappanchathiram Regional Air Station' },
+    { lat: 13.0550, lon: 80.0350, name: 'Thirumazhisai Satellite Town Station' },
     { lat: 12.9980, lon: 80.0880, name: 'Kundrathur Air Monitoring Station' },
     { lat: 13.0410, lon: 80.1180, name: 'Mangadu Residential Air Sensor' },
+    { lat: 13.0330, lon: 80.0750, name: 'Iyyappanthangal Air Monitor' },
     { lat: 12.9860, lon: 79.9480, name: 'Sriperumbudur Tech Zone Station' }
   ] : [
     { lat: Number((cLat).toFixed(4)), lon: Number((cLon).toFixed(4)), name: `${labelPrefix} Central Station` },
@@ -769,8 +774,8 @@ exports.getAQIByBounds = async (req, res) => {
     // Count how many stations fall strictly inside visible viewport
     const visibleInBounds = stations.filter(s => s.lat >= nMinLat && s.lat <= nMaxLat && s.lon >= nMinLon && s.lon <= nMaxLon);
 
-    // If visible stations count inside requested bounds is low (< 3), augment with local & regional stations
-    if (visibleInBounds.length < 3) {
+    // If visible stations count inside requested bounds is low (< 8), augment with local & regional stations
+    if (visibleInBounds.length < 8) {
       const address = await performReverseGeocode(cLat, cLon);
       const targetCity = extractCleanCity(address);
       const cityData = await fetchCityFeedAndStations(targetCity);

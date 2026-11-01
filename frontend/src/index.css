@@ -108,6 +108,25 @@ code {
   user-select: none;
 }
 
+/* Google Maps Dark Mode Tile Filter */
+.google-maps-dark-tiles {
+  filter: invert(90%) hue-rotate(180deg) brightness(95%) contrast(90%) !important;
+}
+
+/* Custom Station Marker Hover Tooltip */
+.custom-station-tooltip {
+  background: rgba(6, 20, 27, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-radius: 0.75rem !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6) !important;
+}
+.custom-station-tooltip::before {
+  border-top-color: rgba(6, 20, 27, 0.95) !important;
+}
+
 /* Animations & Ultra-Interactive Styles */
 @keyframes fadeIn {
   from { opacity: 0; }

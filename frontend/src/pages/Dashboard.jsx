@@ -95,13 +95,13 @@ export default function Dashboard() {
 
     const geoOptions = {
       enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 60000,
+      timeout: 15000,
+      maximumAge: 0, // Force fresh real-time coordinates, no stale cache
     };
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const { latitude, longitude } = position.coords;
+        const { latitude, longitude, accuracy } = position.coords;
         console.log(`GPS Location detected: lat=${latitude}, lon=${longitude}`);
 
         try {
@@ -119,6 +119,7 @@ export default function Dashboard() {
             lat: latitude,
             lon: longitude,
             isGPS: true,
+            accuracy: accuracy ? Math.round(accuracy) : null,
             displayName: geoData.displayName || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
           };
 
@@ -309,7 +310,7 @@ export default function Dashboard() {
   // Handle Location Selected from Map / Autocomplete Search
   const handleLocationSelect = (loc) => {
     const updated = {
-      name: loc.name || loc.displayName.split(',')[0],
+      name: loc.name || (loc.displayName ? loc.displayName.split(',')[0] : 'Selected Location'),
       area: loc.area || '',
       city: loc.city || loc.name,
       district: loc.district || '',
@@ -317,9 +318,18 @@ export default function Dashboard() {
       country: loc.country || '',
       lat: loc.lat,
       lon: loc.lon,
-      isGPS: false,
+      isGPS: Boolean(loc.isGPS),
+      accuracy: loc.accuracy || null,
       displayName: loc.displayName || loc.name
     };
+
+    if (loc.isGPS) {
+      setUserGeoLocation({
+        lat: loc.lat,
+        lon: loc.lon,
+        displayName: updated.displayName
+      });
+    }
 
     setActiveLocation(updated);
     localStorage.setItem('airsense_active_location', JSON.stringify(updated));
@@ -424,8 +434,13 @@ export default function Dashboard() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-black uppercase tracking-widest px-3 py-0.5 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 flex items-center gap-1.5 shadow-sm">
                     <FiNavigation className="w-3.5 h-3.5 text-cyan-300 animate-pulse" />
-                    <span>{activeLocation.isGPS ? 'GPS DETECTED LOCATION' : 'AIR QUALITY STATION'}</span>
+                    <span>{activeLocation.isGPS ? 'GPS PINPOINT LOCATION' : 'AIR QUALITY STATION'}</span>
                   </span>
+                  {activeLocation.accuracy && (
+                    <span className="text-[10px] text-cyan-300 bg-cyan-950/80 font-mono font-bold px-2 py-0.5 rounded-md border border-cyan-500/30">
+                      &plusmn;{activeLocation.accuracy}m Accuracy
+                    </span>
+                  )}
                   <span className="text-xs font-mono text-slate-400 font-semibold bg-white/5 px-2.5 py-0.5 rounded-md border border-white/10">
                     Live: {liveClock.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                   </span>
