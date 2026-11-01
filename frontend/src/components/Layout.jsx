@@ -91,31 +91,33 @@ export default function Layout({ children, fullBleed = false }) {
       {/* Desktop Layout Placeholder (maintains constant space so page never reflows) */}
       <div
         className={`hidden md:block flex-shrink-0 transition-all duration-300 ease-in-out ${
-          'w-[72px]'
+          isPinned ? 'w-64' : 'w-20'
         }`}
       />
 
       {/* Backside 50% Blur Backdrop when cursor is placed on sidebar */}
       <div
         className={`fixed inset-0 z-30 transition-all duration-300 pointer-events-none hidden md:block ${
-          isHovered
+          isHovered && !isPinned
             ? 'opacity-100 backdrop-blur-md bg-black/50'
             : 'opacity-0'
         }`}
       />
 
-      {/* Desktop Fixed Floating & Overlapping Sidebar */}
-      <div
+      {/* Desktop Fixed Floating Rail & Auto-Open Sidebar */}
+      <aside
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="hidden md:block"
+        className={`fixed top-3 left-3 bottom-3 h-[calc(100vh-1.5rem)] ${
+          isExpanded ? 'w-64' : 'w-20'
+        } backdrop-blur-3xl bg-slate-950/70 border border-white/15 rounded-3xl shadow-[0_24px_70px_0_rgba(0,0,0,0.85)] transition-all duration-300 ease-in-out hidden md:flex flex-col z-40 overflow-visible`}
       >
-        <Sidebar />
-
-
-
-
-      </div>
+        <Sidebar
+          collapsed={!isExpanded}
+          isPinned={isPinned}
+          onTogglePin={togglePin}
+        />
+      </aside>
 
       {/* Mobile Sidebar Overlay Drawer */}
       {mobileOpen && (
@@ -123,8 +125,8 @@ export default function Layout({ children, fullBleed = false }) {
           className="fixed inset-0 z-50 md:hidden bg-black/70 backdrop-blur-md flex"
           onClick={() => setMobileOpen(false)}
         >
-          <div
-            className="w-[72px] h-full"
+          <aside
+            className="w-72 h-full backdrop-blur-3xl bg-slate-900/95 shadow-2xl border-r border-white/20 p-2 animate-in slide-in-from-left duration-300"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-end p-2">
@@ -135,12 +137,12 @@ export default function Layout({ children, fullBleed = false }) {
                 <FiX className="w-6 h-6" />
               </button>
             </div>
-            <Sidebar isMobile onItemClick={() => setMobileOpen(false)} />
-
-
-
-    
-          </div>
+            <Sidebar
+              collapsed={false}
+              isPinned={true}
+              onItemClick={() => setMobileOpen(false)}
+            />
+          </aside>
         </div>
       )}
 

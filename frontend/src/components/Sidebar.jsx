@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -12,33 +12,27 @@ import {
   Settings, 
   User, 
   LogOut,
-  Leaf
+  Leaf,
+  Pin,
+  PinOff
 } from 'lucide-react';
 import { useAuthStore } from '../context/store';
 import { apiService } from '../services/apiService';
 
-const Sidebar = ({ onItemClick, isMobile = false }) => {
-  const { logout } = useAuthStore();
+export default function Sidebar({ collapsed, isPinned, onTogglePin, onItemClick }) {
+  const { user, logout } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
-  const [activeRoute, setActiveRoute] = useState(() => {
-    if (location.pathname === '/predictions') return 'AI Predictions';
-    if (location.pathname === '/reports') return 'City Reports';
-    if (location.pathname === '/analytics') return 'Data Visualization';
-    if (location.pathname === '/alerts') return 'Alerts';
-    if (location.pathname === '/settings') return 'Settings';
-    return 'Dashboard';
-  });
 
   const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Live AQI', path: '/dashboard', icon: Wind },
-    { name: 'Air Quality Map', path: '/dashboard', icon: Map },
-    { name: 'AI Predictions', path: '/predictions', icon: BrainCircuit },
-    { name: 'City Reports', path: '/reports', icon: Building2 },
+    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, badge: 'LIVE', badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
+    { name: 'Live AQI', path: '/dashboard#aqi-metrics', icon: Wind },
+    { name: 'Air Quality Map', path: '/dashboard#map', icon: Map },
+    { name: 'AI Predictions', path: '/predictions', icon: BrainCircuit, badge: 'FORECAST', badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' },
+    { name: 'City Reports', path: '/reports', icon: Building2, badge: 'AUDIT', badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/30' },
     { name: 'Historical Analysis', path: '/reports', icon: History },
-    { name: 'Data Visualization', path: '/analytics', icon: ChartNoAxesCombined },
-    { name: 'Alerts', path: '/alerts', icon: Bell },
+    { name: 'Data Visualization', path: '/analytics', icon: ChartNoAxesCombined, badge: 'PRO', badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/30' },
+    { name: 'Alerts', path: '/alerts', icon: Bell, ping: true },
   ];
 
   const bottomItems = [
@@ -64,7 +58,6 @@ const Sidebar = ({ onItemClick, isMobile = false }) => {
   };
 
   const handleItemClick = (item) => {
-    setActiveRoute(item.name);
     if (onItemClick) onItemClick();
 
     if (item.action === 'logout') {
@@ -74,7 +67,8 @@ const Sidebar = ({ onItemClick, isMobile = false }) => {
 
     if (item.path) {
       if (item.name === 'Live AQI' && location.pathname === '/dashboard') {
-        window.scrollTo({ top: 380, behavior: 'smooth' });
+        const el = document.getElementById('air-quality-station-section') || document.querySelector('main');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
       } else if (item.name === 'Air Quality Map' && location.pathname === '/dashboard') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
@@ -83,78 +77,138 @@ const Sidebar = ({ onItemClick, isMobile = false }) => {
     }
   };
 
-  const NavIcon = ({ item }) => {
-    const isCurrentPath = 
-      (item.path === '/dashboard' && location.pathname === '/dashboard') ||
-      (item.path === '/predictions' && location.pathname === '/predictions') ||
-      (item.path === '/reports' && location.pathname === '/reports') ||
-      (item.path === '/analytics' && location.pathname === '/analytics') ||
-      (item.path === '/alerts' && location.pathname === '/alerts') ||
-      (item.path === '/settings' && location.pathname === '/settings');
+  const isCurrentActive = (item) => {
+    if (item.path === '/dashboard' && (location.pathname === '/dashboard' || location.pathname === '/')) return true;
+    if (item.path === '/predictions' && location.pathname === '/predictions') return true;
+    if (item.path === '/reports' && location.pathname === '/reports') return true;
+    if (item.path === '/analytics' && location.pathname === '/analytics') return true;
+    if (item.path === '/alerts' && location.pathname === '/alerts') return true;
+    if (item.path === '/settings' && location.pathname === '/settings') return true;
+    return false;
+  };
 
-    const isActive = activeRoute === item.name || (isCurrentPath && activeRoute === item.name);
+  const NavIcon = ({ item }) => {
+    const isActive = isCurrentActive(item);
     const Icon = item.icon;
-    
+    const isLogout = item.action === 'logout';
+
     return (
-      <div className="relative group w-full flex justify-center py-2">
+      <div className={`relative group w-full flex ${collapsed ? 'justify-center' : 'justify-start'} py-1 px-1`}>
         <button
           onClick={() => handleItemClick(item)}
-          className={`relative z-10 flex items-center justify-center w-11 h-11 rounded-full transition-all duration-300 ease-out
-            ${isActive 
-              ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)] scale-110' 
-              : 'bg-white dark:bg-slate-900 text-gray-400 dark:text-slate-400 hover:text-blue-500 dark:hover:text-cyan-400 hover:scale-110 hover:shadow-md border border-gray-100 dark:border-white/10'
-            }`}
+          className={`relative z-10 flex items-center ${
+            collapsed
+              ? 'w-11 h-11 justify-center rounded-full'
+              : 'w-full gap-3 px-2 py-1.5 rounded-2xl'
+          } transition-all duration-300 ease-out ${
+            isActive
+              ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)] scale-[1.03]'
+              : isLogout
+                ? 'bg-slate-900/90 text-rose-400 hover:text-white hover:bg-rose-500/20 border border-white/10 hover:border-rose-500/30'
+                : 'bg-slate-900/90 text-slate-400 hover:text-cyan-400 hover:bg-slate-800/80 hover:scale-[1.03] border border-white/10'
+          }`}
         >
-          <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+          {/* Circular Node Button */}
+          <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0">
+            <Icon size={19} strokeWidth={isActive ? 2.5 : 2} />
+          </div>
+
+          {/* Expanded Labels and Badges (Auto Open on Hover) */}
+          {!collapsed && (
+            <div className="flex items-center justify-between flex-1 min-w-0 pr-2 overflow-hidden animate-in fade-in duration-200">
+              <span className={`text-xs whitespace-nowrap overflow-hidden text-ellipsis ${
+                isActive ? 'font-black text-white' : 'font-bold text-slate-300 group-hover:text-white'
+              }`}>
+                {item.name}
+              </span>
+              {item.badge && (
+                <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border shrink-0 ${item.badgeColor || 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'}`}>
+                  {item.badge}
+                </span>
+              )}
+            </div>
+          )}
         </button>
 
-        {/* Tooltip */}
-        <div className="absolute left-[70px] top-1/2 -translate-y-1/2 px-3 py-1.5 bg-gray-800 dark:bg-slate-900 text-white text-xs font-medium rounded-lg opacity-0 -translate-x-3 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 z-50 whitespace-nowrap shadow-xl border border-transparent dark:border-white/10">
-          {item.name}
-          {/* Tooltip triangle pointer */}
-          <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-gray-800 dark:bg-slate-900 rotate-45 border-l border-b border-transparent dark:border-white/10"></div>
-        </div>
+        {/* Floating Tooltip (When Collapsed) */}
+        {collapsed && (
+          <div className="absolute left-[64px] top-1/2 -translate-y-1/2 px-3 py-1.5 bg-slate-900/95 text-white text-xs font-semibold rounded-lg opacity-0 -translate-x-2 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 z-50 whitespace-nowrap shadow-2xl border border-white/15 backdrop-blur-2xl flex items-center gap-1.5">
+            <span>{item.name}</span>
+            {item.badge && (
+              <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded border ${item.badgeColor}`}>
+                {item.badge}
+              </span>
+            )}
+            {/* Tooltip triangle pointer */}
+            <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-900/95 rotate-45 border-l border-b border-white/15"></div>
+          </div>
+        )}
       </div>
     );
   };
 
   return (
-    <aside className={`h-screen w-[72px] bg-[#f8fafc] dark:bg-[#06141B]/95 backdrop-blur-2xl flex flex-col items-center py-6 z-40 border-r border-gray-200/50 dark:border-white/10 select-none ${
-      isMobile ? 'relative h-full' : 'fixed left-0 top-0 hidden md:flex'
-    }`}>
-      
-      {/* The Single Continuous Vertical Line */}
-      <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-gray-200 dark:bg-slate-700/60 z-0"></div>
+    <nav className="h-full w-full flex flex-col p-3 select-none justify-between overflow-hidden relative">
+      {/* The Single Continuous Vertical Line (Centered when collapsed, behind icons when expanded) */}
+      <div className={`absolute top-0 bottom-0 ${
+        collapsed ? 'left-1/2 -translate-x-1/2' : 'left-[32px] -translate-x-1/2'
+      } w-[2px] bg-slate-700/60 z-0 transition-all duration-300`}></div>
 
-      {/* Logo Section */}
-      <div className="relative z-10 mb-6 bg-transparent py-2 px-1">
-        <button
+      {/* Top: Logo & Pin Control */}
+      <div className="relative z-10 mb-4 flex items-center justify-between w-full px-1">
+        <div
           onClick={() => {
-            setActiveRoute('Dashboard');
+            if (onItemClick) onItemClick();
             navigate('/dashboard');
           }}
-          className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center text-white shadow-lg transition-transform duration-300 hover:scale-105 active:scale-95"
-          title="AirSense Cloud"
+          className="flex items-center gap-3 cursor-pointer group/logo min-w-0"
         >
-          <Leaf size={24} strokeWidth={2.5} />
-        </button>
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center text-white shadow-lg shrink-0 transition-transform duration-300 group-hover/logo:scale-105">
+            <Leaf size={22} strokeWidth={2.5} />
+          </div>
+
+          {!collapsed && (
+            <div className="flex flex-col min-w-0 overflow-hidden transition-all duration-300">
+              <div className="flex items-center gap-1.5">
+                <span className="font-black text-white text-base tracking-tight whitespace-nowrap">
+                  AirSense
+                </span>
+                <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-cyan-950/80 text-cyan-400 border border-cyan-500/30">
+                  PRO
+                </span>
+              </div>
+              <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 whitespace-nowrap flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Enterprise AI
+              </span>
+            </div>
+          )}
+        </div>
+
+        {!collapsed && onTogglePin && (
+          <button
+            onClick={onTogglePin}
+            className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-white/10 transition shrink-0 ml-1"
+            title={isPinned ? 'Unpin Sidebar' : 'Pin Sidebar (Keep Open)'}
+          >
+            {isPinned ? <PinOff size={16} /> : <Pin size={16} />}
+          </button>
+        )}
       </div>
 
-      {/* Main Navigation */}
-      <nav className="relative z-10 flex-1 w-full flex flex-col items-center overflow-y-auto scrollbar-hide py-1 bg-transparent">
+      {/* Main Navigation Items */}
+      <div className="relative z-10 flex-1 w-full flex flex-col items-center overflow-y-auto overflow-x-hidden scrollbar-hide py-1">
         {navItems.map((item) => (
           <NavIcon key={item.name} item={item} />
         ))}
-      </nav>
+      </div>
 
-      {/* Bottom Section */}
-      <div className="relative z-10 mt-auto pt-3 flex flex-col items-center w-full bg-transparent pb-2">
+      {/* Bottom Section: Profile, Settings, Logout */}
+      <div className="relative z-10 mt-auto pt-2 border-t border-white/10 flex flex-col items-center w-full">
         {bottomItems.map((item) => (
           <NavIcon key={item.name} item={item} />
         ))}
       </div>
-    </aside>
+    </nav>
   );
-};
-
-export default Sidebar;
+}
