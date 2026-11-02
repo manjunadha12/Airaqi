@@ -67,6 +67,16 @@ export default function Analytics() {
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
 
+  useEffect(() => {
+    if (window.location.hash && (window.location.hash.includes('compare') || window.location.hash.includes('city-compare'))) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById('city-compare');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   // Active Location State (persisted or auto-detected)
   const [activeLocation, setActiveLocation] = useState(() => {
     try {
@@ -873,7 +883,7 @@ export default function Analytics() {
         </div>
 
         {/* SECTION 3: ALL-INDIA COMPARATIVE RANKING MATRIX */}
-        <div className="backdrop-blur-3xl bg-[#11212D]/80 rounded-3xl p-6 shadow-2xl border border-white/10">
+        <div id="city-compare" className="backdrop-blur-3xl bg-[#11212D]/80 rounded-3xl p-6 shadow-2xl border border-white/10 scroll-mt-20">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-6 border-b border-white/10">
             <div>
               <div className="flex items-center gap-2.5">
