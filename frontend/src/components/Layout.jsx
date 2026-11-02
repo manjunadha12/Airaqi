@@ -101,7 +101,7 @@ export default function Layout({ children, fullBleed = false }) {
         onMouseLeave={() => setIsHovered(false)}
         className={`fixed top-3 left-3 bottom-3 h-[calc(100vh-1.5rem)] ${
           isExpanded 
-            ? 'w-[260px] bg-[#06141B]/80 backdrop-blur-2xl border border-cyan-500/25 border-l-cyan-400/40 rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_35px_rgba(6,182,212,0.15),inset_0_1px_1px_rgba(255,255,255,0.15)] p-2' 
+            ? 'w-[260px] bg-slate-950/85 backdrop-blur-2xl border border-white/15 rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.85)] p-2' 
             : 'w-[64px] bg-transparent border-transparent shadow-none p-0'
         } transition-all duration-300 ease-in-out hidden md:flex flex-col z-40 overflow-visible`}
       >
