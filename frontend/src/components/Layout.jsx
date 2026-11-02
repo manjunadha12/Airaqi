@@ -91,26 +91,19 @@ export default function Layout({ children, fullBleed = false }) {
       {/* Desktop Layout Placeholder (maintains constant space so page never reflows) */}
       <div
         className={`hidden md:block flex-shrink-0 transition-all duration-300 ease-in-out ${
-          isPinned ? 'w-64' : 'w-20'
+          isPinned ? 'w-60' : 'w-16'
         }`}
       />
 
-      {/* Backside 50% Blur Backdrop when cursor is placed on sidebar */}
-      <div
-        className={`fixed inset-0 z-30 transition-all duration-300 pointer-events-none hidden md:block ${
-          isHovered && !isPinned
-            ? 'opacity-100 backdrop-blur-md bg-black/50'
-            : 'opacity-0'
-        }`}
-      />
-
-      {/* Desktop Fixed Floating Rail & Auto-Open Sidebar */}
+      {/* Desktop Fixed Floating Rail Sidebar (No Backside Box when collapsed) */}
       <aside
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`fixed top-3 left-3 bottom-3 h-[calc(100vh-1.5rem)] ${
-          isExpanded ? 'w-64' : 'w-20'
-        } backdrop-blur-3xl bg-slate-950/70 border border-white/15 rounded-3xl shadow-[0_24px_70px_0_rgba(0,0,0,0.85)] transition-all duration-300 ease-in-out hidden md:flex flex-col z-40 overflow-visible`}
+        className={`fixed top-4 left-3 bottom-4 h-[calc(100vh-2rem)] ${
+          isExpanded 
+            ? 'w-60 bg-slate-950/90 backdrop-blur-3xl border border-white/15 rounded-3xl shadow-2xl p-2' 
+            : 'w-16 bg-transparent border-transparent shadow-none p-0'
+        } transition-all duration-300 ease-in-out hidden md:flex flex-col z-40 overflow-visible`}
       >
         <Sidebar
           collapsed={!isExpanded}
